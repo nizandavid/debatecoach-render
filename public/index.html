@@ -4,80 +4,61 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DebateCoach</title>
-
   <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Arial, sans-serif;
-      margin: 24px;
-      max-width: 900px;
-    }
-    h1 {
-      margin-bottom: 6px;
-    }
-    .muted {
-      color: #666;
-    }
-    .card {
-      padding: 16px;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      margin-top: 14px;
-    }
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    input,
-    select,
-    textarea,
-    button {
-      font-size: 16px;
-      padding: 10px;
-    }
-    input {
-      flex: 1;
-      min-width: 260px;
-    }
-    textarea {
-      width: 100%;
-      height: 120px;
-      resize: vertical;
-    }
-    button {
-      cursor: pointer;
-    }
-    #timer {
-      font-weight: bold;
-      font-size: 18px;
-    }
-    #reply {
-      white-space: pre-wrap;
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;margin:24px;max-width:980px}
+    .muted{color:#666}
+    .card{padding:16px;border:1px solid #ddd;border-radius:12px;margin-top:14px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    input,select,textarea,button{font-size:16px;padding:10px}
+    input{flex:1;min-width:260px}
+    textarea{width:100%;height:120px;resize:vertical}
+    button{cursor:pointer}
+    button.primary{font-weight:700}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    #timer{font-weight:800;font-size:18px}
+    #reply,#prepReply,#feedbackReply{white-space:pre-wrap}
+    hr{margin:18px 0;border:none;border-top:1px solid #eee}
+    .tabs{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 18px}
+    .tab{border:1px solid #ddd;border-radius:999px;padding:8px 12px;background:#fff}
+    .tab.active{border-color:#111;font-weight:700}
+    .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid #ddd;border-radius:999px;padding:6px 10px}
+    .kpi{font-weight:700}
+    .small{font-size:14px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:760px){.grid2{grid-template-columns:1fr}}
+    @media print{
+      .noPrint{display:none!important}
+      body{max-width:none;margin:12mm}
+      .card{border:0}
+      textarea{border:0}
     }
   </style>
 </head>
-
 <body>
   <h1>DebateCoach</h1>
-  <p class="muted">
-    Start a 5-minute debate session. Write your argument and get challenged by
-    the AI.
-  </p>
+  <p class="muted">Prep clearly first, then run a focused live debate. You can swap roles: sometimes the student is PRO, sometimes CON.</p>
 
-  <div class="card">
+  <div class="tabs noPrint">
+    <button id="prepTab" class="tab active">🧠 Prep</button>
+    <button id="debateTab" class="tab">🎙️ Debate</button>
+    <button id="feedbackTab" class="tab" disabled>📝 Feedback</button>
+  </div>
+
+  <!-- ================== PREP VIEW ================== -->
+  <div id="prepView" class="card">
+    <div class="row noPrint" style="justify-content:space-between">
+      <div>
+        <h2 style="margin:0 0 6px">Prep Lab</h2>
+        <p class="muted small" style="margin:0">Choose topic + roles, get ideas, build opening + points. Then start debate.</p>
+      </div>
+      <div class="row">
+        <button id="exportPrepBtn" class="noPrint">📄 Export Prep</button>
+        <button id="printPrepBtn" class="noPrint">🖨️ Print</button>
+      </div>
+    </div>
+
     <div class="row">
-      <input
-        id="topic"
-        value="Make English the language of instruction in Israeli schools"
-      />
-
-      <select id="stance">
-        <option value="PRO" selected>PRO</option>
-        <option value="CON">CON</option>
-      </select>
-
+      <input id="topic" value="Make English the language of instruction in Israeli schools" />
       <select id="difficulty">
         <option value="Easy">Easy</option>
         <option value="Medium" selected>Medium</option>
@@ -85,148 +66,1048 @@
       </select>
     </div>
 
-    <div class="row" style="margin-top: 12px">
-      <button id="startBtn">⏱️ Start 5-minute session</button>
-      <span id="timer">05:00</span>
-      <button id="endBtn" disabled>🏁 End</button>
+    <div class="grid2" style="margin-top:12px">
+      <div class="card" style="margin-top:0">
+        <h3 style="margin-top:0">Role swap</h3>
+        <div class="row">
+          <label class="pill"><input type="radio" name="role" value="PRO" checked> Student = <b>PRO</b> (AI = CON)</label>
+          <label class="pill"><input type="radio" name="role" value="CON"> Student = <b>CON</b> (AI = PRO)</label>
+        </div>
+
+        <h3>Who starts?</h3>
+        <div class="row">
+          <label class="pill"><input type="radio" name="startRule" value="standard" checked> Standard: <b>PRO starts</b></label>
+          <label class="pill"><input type="radio" name="startRule" value="practice"> Practice: choose starter</label>
+        </div>
+        <div id="starterChooser" class="row noPrint" style="display:none;margin-top:10px">
+          <label class="pill"><input type="radio" name="starter" value="student" checked> Student starts</label>
+          <label class="pill"><input type="radio" name="starter" value="ai"> AI starts</label>
+        </div>
+        <p class="muted small">Standard = PRO starts (school-style). Practice lets you train openings from either side.</p>
+      </div>
+
+      <div class="card" style="margin-top:0">
+        <h3 style="margin-top:0">Topic suggestions</h3>
+        <div class="row noPrint">
+          <button id="suggestBtn">💡 Suggest topics</button>
+          <select id="topicSelect">
+            <option value="">— Pick a suggested topic —</option>
+          </select>
+        </div>
+        <div id="suggestStatus" class="muted small">Click “Suggest topics” to load options.</div>
+      </div>
     </div>
 
-    <p id="status" class="muted"></p>
+    <hr/>
 
-    <h3>Your argument</h3>
-    <textarea id="userText" placeholder="Type your argument here..."></textarea>
+    <h3>Quick prep / coach</h3>
+    <div class="row noPrint">
+      <button id="quickPrepBtn">🧠 Quick prep (Opening + points)</button>
+      <button id="mySideBtn">✅ My side points</button>
+      <button id="oppSideBtn">❌ Opponent points</button>
+      <button id="rebutBtn">🛡️ Rebuttals</button>
+      <button id="examplesBtn">📌 Examples</button>
+    </div>
 
-    <div class="row" style="margin-top: 12px">
-      <button id="sendBtn" disabled>➡️ Send to AI</button>
-      <button id="speakBtn" disabled>🔊 Speak reply</button>
+    <textarea id="prepText" class="noPrint" placeholder="Ask the coach: PRO/CON points, rebuttals, examples, definitions, structure..."></textarea>
+
+    <div class="row noPrint">
+      <button id="prepSendBtn">💬 Ask coach</button>
+      <button id="copyOpeningBtn">✅ Copy Opening to debate</button>
+      <button id="clearPrepBtn">🧹 Clear prep</button>
+    </div>
+
+    <div id="prepReply" class="card muted">Click “Quick prep” or “Ask coach”.</div>
+
+    <hr/>
+
+    <h3>Build your argument</h3>
+    <div class="grid2">
+      <div>
+        <label class="muted small">Opening (25 seconds)</label>
+        <textarea id="openingBox" placeholder="Write your opening here..."></textarea>
+      </div>
+      <div>
+        <label class="muted small">3 points (bullet style)</label>
+        <textarea id="pointsBox" placeholder="Point 1: ...&#10;Point 2: ...&#10;Point 3: ..."></textarea>
+      </div>
+    </div>
+
+    <div class="row noPrint" style="margin-top:12px">
+      <button id="readyBtn" class="primary">✅ I’m ready → Start debate</button>
+      <span class="muted small">Switches to Debate screen and starts the session.</span>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3 style="margin-top:0">Prep Summary (for printing/export)</h3>
+      <div id="prepSummary" class="muted small">Export/print to capture your prep notes.</div>
+    </div>
+  </div>
+
+  <!-- ================== DEBATE VIEW ================== -->
+  <div id="debateView" class="card" style="display:none">
+    <div class="row noPrint" style="justify-content:space-between">
+      <div>
+        <h2 style="margin:0 0 6px">Live Debate</h2>
+        <p class="muted small" style="margin:0">Short turns. Claim → reason → example → link back.</p>
+      </div>
+      <div class="row">
+        <button id="exportDebateBtn" class="noPrint">📄 Export Transcript</button>
+        <button id="printDebateBtn" class="noPrint">🖨️ Print</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="pill"><span class="kpi">Topic:</span> <span id="debTopic"></span></span>
+      <span class="pill"><span class="kpi">Student:</span> <span id="debStudentSide"></span></span>
+      <span class="pill"><span class="kpi">AI:</span> <span id="debAiSide"></span></span>
+      <span class="pill"><span class="kpi">Level:</span> <span id="debLevel"></span></span>
+    </div>
+
+    <div class="row noPrint" style="margin-top:12px">
+      <button id="startBtn" class="primary">⏱️ Start 5-minute session</button>
+      <span id="timer">05:00</span>
+      <button id="endBtn" disabled>🏁 End & Get Feedback</button>
+      <span id="liveStatus" class="muted"></span>
+    </div>
+
+    <hr/>
+
+    <h3>Your argument (type or dictate)</h3>
+    <textarea id="userText" placeholder="Type or dictate your argument here..."></textarea>
+
+    <div class="row noPrint">
+      <button id="micBtn">🎙️ Start recording</button>
+      <span id="recTimer" class="muted small" style="display:none">00:00</span>
+      <button id="cleanupBtn">✨ Clean up my speech</button>
+      <button id="sendBtn" disabled>➡️ Send turn</button>
+
+      <button id="speakBtn" disabled>🔊 Speak AI reply</button>
+      <button id="stopSpeakBtn" disabled>⏹ Stop AI</button>
+      <button id="skipSpeakBtn" disabled>⏭ Skip</button>
+
+      <label class="pill small" title="AI speaks automatically after each reply">
+        <input type="checkbox" id="autoSpeak" checked>
+        Auto-speak
+      </label>
     </div>
 
     <h3>AI response</h3>
     <div id="reply" class="card muted">No response yet.</div>
+
+    <div class="card" style="margin-top:14px">
+      <h3 style="margin-top:0">Transcript (for export/print)</h3>
+      <div id="debateTranscript" class="muted small">Transcript will appear here as you debate.</div>
+    </div>
   </div>
 
-  <script>
-    const startBtn = document.getElementById("startBtn");
-    const endBtn = document.getElementById("endBtn");
-    const sendBtn = document.getElementById("sendBtn");
-    const speakBtn = document.getElementById("speakBtn");
+  <!-- ================== FEEDBACK VIEW ================== -->
+  <div id="feedbackView" class="card" style="display:none">
+    <div class="row noPrint" style="justify-content:space-between">
+      <div>
+        <h2 style="margin:0 0 6px">Session Feedback</h2>
+        <p class="muted small" style="margin:0">Summary + scores + language corrections + upgraded opening/closing.</p>
+      </div>
+      <div class="row">
+        <button id="exportFeedbackBtn" class="noPrint">📄 Export Feedback</button>
+        <button id="printFeedbackBtn" class="noPrint">🖨️ Print</button>
+      </div>
+    </div>
 
-    const timerEl = document.getElementById("timer");
-    const statusEl = document.getElementById("status");
-    const replyEl = document.getElementById("reply");
-    const userTextEl = document.getElementById("userText");
+    <div class="row noPrint">
+      <button id="copyFeedbackBtn">📋 Copy feedback</button>
+      <button id="newSessionBtn">🔁 New session</button>
+    </div>
 
-    let sessionActive = false;
-    let secondsLeft = 300;
-    let timerInterval = null;
-    let lastReply = "";
+    <div id="feedbackReply" class="card muted">No feedback yet.</div>
+  </div>
 
-    function formatTime(sec) {
-      const m = Math.floor(sec / 60);
-      const s = sec % 60;
-      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+<script>
+  // ====== Elements
+  const prepTab = document.getElementById("prepTab");
+  const debateTab = document.getElementById("debateTab");
+  const feedbackTab = document.getElementById("feedbackTab");
+
+  const prepView = document.getElementById("prepView");
+  const debateView = document.getElementById("debateView");
+  const feedbackView = document.getElementById("feedbackView");
+
+  const topicEl = document.getElementById("topic");
+  const difficultyEl = document.getElementById("difficulty");
+
+  const topicSelect = document.getElementById("topicSelect");
+  const suggestBtn = document.getElementById("suggestBtn");
+  const suggestStatus = document.getElementById("suggestStatus");
+
+  const prepTextEl = document.getElementById("prepText");
+  const prepReplyEl = document.getElementById("prepReply");
+  const prepSendBtn = document.getElementById("prepSendBtn");
+
+  const quickPrepBtn = document.getElementById("quickPrepBtn");
+  const mySideBtn = document.getElementById("mySideBtn");
+  const oppSideBtn = document.getElementById("oppSideBtn");
+  const rebutBtn = document.getElementById("rebutBtn");
+  const examplesBtn = document.getElementById("examplesBtn");
+  const copyOpeningBtn = document.getElementById("copyOpeningBtn");
+  const clearPrepBtn = document.getElementById("clearPrepBtn");
+
+  const openingBox = document.getElementById("openingBox");
+  const pointsBox = document.getElementById("pointsBox");
+  const prepSummaryEl = document.getElementById("prepSummary");
+
+  const readyBtn = document.getElementById("readyBtn");
+
+  const startRuleRadios = document.querySelectorAll('input[name="startRule"]');
+  const starterChooser = document.getElementById("starterChooser");
+
+  const userTextEl = document.getElementById("userText");
+  const micBtn = document.getElementById("micBtn");
+  const cleanupBtn = document.getElementById("cleanupBtn");
+
+  const startBtn = document.getElementById("startBtn");
+  const endBtn = document.getElementById("endBtn");
+  const sendBtn = document.getElementById("sendBtn");
+  const speakBtn = document.getElementById("speakBtn");
+  const stopSpeakBtn = document.getElementById("stopSpeakBtn");
+  const skipSpeakBtn = document.getElementById("skipSpeakBtn");
+  const autoSpeakEl = document.getElementById("autoSpeak");
+
+  const timerEl = document.getElementById("timer");
+  const liveStatus = document.getElementById("liveStatus");
+  const replyEl = document.getElementById("reply");
+
+  const debTopic = document.getElementById("debTopic");
+  const debStudentSide = document.getElementById("debStudentSide");
+  const debAiSide = document.getElementById("debAiSide");
+  const debLevel = document.getElementById("debLevel");
+  const debateTranscriptEl = document.getElementById("debateTranscript");
+
+  const feedbackReplyEl = document.getElementById("feedbackReply");
+  const copyFeedbackBtn = document.getElementById("copyFeedbackBtn");
+  const newSessionBtn = document.getElementById("newSessionBtn");
+
+  // Export / Print
+  const exportPrepBtn = document.getElementById("exportPrepBtn");
+  const printPrepBtn = document.getElementById("printPrepBtn");
+  const exportDebateBtn = document.getElementById("exportDebateBtn");
+  const printDebateBtn = document.getElementById("printDebateBtn");
+  const exportFeedbackBtn = document.getElementById("exportFeedbackBtn");
+  const printFeedbackBtn = document.getElementById("printFeedbackBtn");
+
+  // ====== State
+  let sessionActive = false;
+  let secondsLeft = 300;
+  let timerInt = null;
+  let lastReply = "";
+  let debateLog = []; // [{role:"student"|"ai", text:"..."}]
+
+  // ====== Recording timer
+  const recTimerEl = document.getElementById("recTimer");
+  let recSeconds = 0;
+  let recInterval = null;
+  function formatMMSS(sec){
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }
+  function startRecTimer(){
+    recSeconds = 0;
+    recTimerEl.textContent = "00:00";
+    recTimerEl.style.display = "inline";
+    recInterval = setInterval(()=>{
+      recSeconds++;
+      recTimerEl.textContent = formatMMSS(recSeconds);
+      if(recSeconds >= 60 && micState.recording){
+        stopRecordingAndTranscribe();
+      }
+    },1000);
+  }
+  function stopRecTimer(){
+    if(recInterval) clearInterval(recInterval);
+    recInterval = null;
+  }
+
+  function getStudentSide(){
+    const r = document.querySelector('input[name="role"]:checked');
+    return r ? r.value : "PRO";
+  }
+  function getAiSide(){
+    return getStudentSide()==="PRO" ? "CON" : "PRO";
+  }
+  function getStartRule(){
+    const r = document.querySelector('input[name="startRule"]:checked');
+    return r ? r.value : "standard";
+  }
+  function getStarter(){
+    if(getStartRule()==="standard"){
+      return (getStudentSide()==="PRO") ? "student" : "ai";
     }
+    const r = document.querySelector('input[name="starter"]:checked');
+    return r ? r.value : "student";
+  }
 
-    function updateControls() {
-      sendBtn.disabled = !sessionActive;
+  function formatTime(sec){
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }
+
+  // ====== AI Speech (auto default + stop + skip)
+  function speakText(text){
+    if(!text) return;
+    window.speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    u.rate = 1.0;
+    u.pitch = 1.0;
+
+    stopSpeakBtn.disabled = false;
+    skipSpeakBtn.disabled = false;
+
+    u.onend = () => {
+      stopSpeakBtn.disabled = true;
+      skipSpeakBtn.disabled = true;
+    };
+    u.onerror = () => {
+      stopSpeakBtn.disabled = true;
+      skipSpeakBtn.disabled = true;
+    };
+
+    window.speechSynthesis.speak(u);
+  }
+
+  function stopSpeaking(){
+    window.speechSynthesis.cancel();
+    stopSpeakBtn.disabled = true;
+    skipSpeakBtn.disabled = true;
+  }
+
+  speakBtn.onclick = ()=> speakText(lastReply);
+  stopSpeakBtn.onclick = ()=> stopSpeaking();
+  skipSpeakBtn.onclick = ()=> {
+    stopSpeaking();
+    liveStatus.textContent = "Your turn — go!";
+    userTextEl.focus();
+    userTextEl.setSelectionRange(userTextEl.value.length, userTextEl.value.length);
+  };
+
+  // ====== Tabs / Views
+  function setActiveTab(which){
+    [prepTab, debateTab, feedbackTab].forEach(b=>b.classList.remove("active"));
+    if(which==="prep") prepTab.classList.add("active");
+    if(which==="debate") debateTab.classList.add("active");
+    if(which==="feedback") feedbackTab.classList.add("active");
+  }
+
+  function showView(which){
+    stopSpeaking(); // always stop AI speech when switching
+    prepView.style.display = (which==="prep") ? "block" : "none";
+    debateView.style.display = (which==="debate") ? "block" : "none";
+    feedbackView.style.display = (which==="feedback") ? "block" : "none";
+    setActiveTab(which);
+
+    // stop recording if leaving debate
+    if(which !== "debate" && micState.recording){
+      stopTracks();
+      micState.recording = false;
+      micBtn.textContent = "🎙️ Start recording";
+      stopRecTimer();
+      recTimerEl.style.display = "none";
+      liveStatus.textContent = "Recording stopped (screen changed).";
+    }
+  }
+
+  // Toggle starter chooser
+  startRuleRadios.forEach(r=>{
+    r.addEventListener("change", ()=>{
+      starterChooser.style.display = (getStartRule()==="practice") ? "flex" : "none";
+      updatePrepSummary();
+    });
+  });
+  document.querySelectorAll('input[name="role"], input[name="starter"]').forEach(el=>{
+    el.addEventListener("change", updatePrepSummary);
+  });
+
+  // ====== Topics
+  suggestBtn.onclick = async () => {
+    suggestStatus.textContent = "Generating topics…";
+    try{
+      const res = await fetch("/topics");
+      const data = await res.json();
+      topicSelect.innerHTML = `<option value="">— Pick a suggested topic —</option>`;
+      (data.topics || []).forEach(t=>{
+        const o = document.createElement("option");
+        o.value = o.textContent = t;
+        topicSelect.appendChild(o);
+      });
+      suggestStatus.textContent = (data.topics && data.topics.length) ? "Pick a topic from the list." : "No topics returned.";
+    }catch{
+      suggestStatus.textContent = "Failed to load topics.";
+    }
+  };
+  topicSelect.onchange = (e)=>{
+    if(e.target.value){ topicEl.value = e.target.value; updatePrepSummary(); }
+  };
+
+  // ====== Prep helpers
+  function setPrepPrompt(text){ prepTextEl.value = text; prepTextEl.focus(); }
+
+  mySideBtn.onclick = ()=> setPrepPrompt(`Give me 5 strong ${getStudentSide()} arguments with short explanations for this motion.`);
+  oppSideBtn.onclick = ()=> setPrepPrompt(`Give me 5 strong ${getAiSide()} arguments with short explanations (opponent side) for this motion.`);
+  rebutBtn.onclick = ()=> setPrepPrompt(`List the main ${getAiSide()} arguments and give the best short rebuttals I can say out loud.`);
+  examplesBtn.onclick = ()=> setPrepPrompt(`Give me 5 quick real-world examples or evidence ideas (Israel + global) that fit this motion.`);
+
+  function extractOpening(text){
+    const m = text.match(/Opening:\s*([\s\S]*?)(?=\n[A-Za-z ]+:\s*|\nMy points:|\nOpponent points:|\nRebuttals:|\nSpeaking tip:|$)/i);
+    return m && m[1] ? m[1].trim() : "";
+  }
+
+  function updatePrepSummary(){
+    const topic = topicEl.value;
+    const level = difficultyEl.value;
+    const studentSide = getStudentSide();
+    const aiSide = getAiSide();
+    const rule = getStartRule()==="standard" ? "Standard (PRO starts)" : "Practice (custom starter)";
+    const starter = getStarter();
+    const opening = (openingBox.value||"").trim();
+    const points = (pointsBox.value||"").trim();
+    const coach = (prepReplyEl.textContent||"").trim();
+
+    prepSummaryEl.textContent =
+`Topic: ${topic}
+Level: ${level}
+Student side: ${studentSide} | AI side: ${aiSide}
+Start rule: ${rule} | Starter: ${starter}
+
+OPENING:
+${opening || "(empty)"}
+
+POINTS:
+${points || "(empty)"}
+
+COACH NOTES:
+${coach || "(empty)"}`.trim();
+  }
+
+  quickPrepBtn.onclick = async ()=>{
+    prepReplyEl.textContent = "Quick prep…";
+    const topic = topicEl.value;
+    const difficulty = difficultyEl.value;
+    const studentSide = getStudentSide();
+    const aiSide = getAiSide();
+
+    const prompt =
+`Give me a quick debate prep pack for: "${topic}".
+Student side: ${studentSide}. Opponent side: ${aiSide}.
+Return exactly:
+Opening: (25 seconds max, labeled 'Opening:')
+My points: 3 bullets
+Opponent points: 3 bullets
+Rebuttals: 2 short bullets
+Speaking tip: 1 line
+Use clear English for speaking.`;
+
+    try{
+      const res = await fetch("/prep",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ topic, stance: studentSide, difficulty, userText: prompt })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        prepReplyEl.textContent = data.details || data.error || ("HTTP "+res.status);
+        updatePrepSummary();
+        return;
+      }
+      const text = (data.reply||"").trim();
+      prepReplyEl.textContent = text || "(No reply)";
+
+      const openingMatch = extractOpening(text);
+      if(openingMatch) openingBox.value = openingMatch;
+
+      const myPointsMatch = text.match(/My points:\s*([\s\S]*?)(?=\n[A-Za-z ]+:\s*|\nOpponent points:|\nRebuttals:|\nSpeaking tip:|$)/i);
+      if(myPointsMatch && myPointsMatch[1]){
+        pointsBox.value = myPointsMatch[1].trim();
+      }
+      updatePrepSummary();
+    }catch{
+      prepReplyEl.textContent = "Network error.";
+      updatePrepSummary();
+    }
+  };
+
+  prepSendBtn.onclick = async ()=>{
+    const userText = prepTextEl.value.trim();
+    if(!userText) return;
+    prepReplyEl.textContent = "Coach is thinking…";
+
+    const topic = topicEl.value;
+    const difficulty = difficultyEl.value;
+    const studentSide = getStudentSide();
+
+    try{
+      const res = await fetch("/prep",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ topic, stance: studentSide, difficulty, userText })
+      });
+      const data = await res.json();
+      prepReplyEl.textContent = (!res.ok)
+        ? (data.details || data.error || ("HTTP "+res.status))
+        : ((data.reply || "(No reply)").trim());
+      updatePrepSummary();
+    }catch{
+      prepReplyEl.textContent = "Network error.";
+      updatePrepSummary();
+    }
+  };
+
+  copyOpeningBtn.onclick = ()=>{
+    const t = (openingBox.value || "").trim() || extractOpening(prepReplyEl.textContent || "");
+    if(!t){
+      prepReplyEl.textContent = "No Opening found yet. Run Quick prep or write an Opening.";
+      updatePrepSummary();
+      return;
+    }
+    userTextEl.value = t;
+    showView("debate");
+    userTextEl.focus();
+    liveStatus.textContent = "Opening copied. Ready to start.";
+  };
+
+  clearPrepBtn.onclick = ()=>{
+    prepTextEl.value = "";
+    prepReplyEl.textContent = "Click “Quick prep” or “Ask coach”.";
+    openingBox.value = "";
+    pointsBox.value = "";
+    updatePrepSummary();
+  };
+
+  [topicEl, difficultyEl, openingBox, pointsBox].forEach(el=>{
+    el.addEventListener("input", updatePrepSummary);
+    el.addEventListener("change", updatePrepSummary);
+  });
+
+  // ====== Debate session helpers
+  function updateDebateHeader(){
+    debTopic.textContent = topicEl.value;
+    debStudentSide.textContent = getStudentSide();
+    debAiSide.textContent = getAiSide();
+    debLevel.textContent = difficultyEl.value;
+  }
+
+  function updateTranscriptUI(){
+    if(!debateLog.length){
+      debateTranscriptEl.textContent = "Transcript will appear here as you debate.";
+      return;
+    }
+    debateTranscriptEl.textContent = debateLog.map(t => (t.role==="student" ? "STUDENT: " : "AI: ") + t.text).join("\n\n");
+  }
+
+  function resetDebate(){
+    sessionActive = false;
+    secondsLeft = 300;
+    timerEl.textContent = "05:00";
+    clearInterval(timerInt);
+    timerInt = null;
+    lastReply = "";
+    replyEl.textContent = "No response yet.";
+    liveStatus.textContent = "";
+    sendBtn.disabled = true;
+    endBtn.disabled = true;
+    startBtn.disabled = false;
+    speakBtn.disabled = true;
+    stopSpeakBtn.disabled = true;
+    skipSpeakBtn.disabled = true;
+    debateLog = [];
+    updateTranscriptUI();
+  }
+
+  async function aiOpeningIfNeeded(){
+    const starter = getStarter();
+    if(starter !== "ai") return;
+
+    liveStatus.textContent = "AI is delivering the opening…";
+    replyEl.textContent = "Thinking…";
+    speakBtn.disabled = true;
+    stopSpeakBtn.disabled = true;
+    skipSpeakBtn.disabled = true;
+
+    const topic = topicEl.value;
+    const difficulty = difficultyEl.value;
+    const aiSide = getAiSide();
+
+    const prompt =
+`Write a strong 25-second Opening for the ${aiSide} side on the motion:
+"${topic}"
+Label it exactly: Opening:
+Use clear spoken English.`;
+
+    try{
+      const res = await fetch("/prep",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ topic, stance: aiSide, difficulty, userText: prompt })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        replyEl.textContent = data.details || data.error || ("HTTP "+res.status);
+        liveStatus.textContent = "AI opening failed.";
+        return;
+      }
+      const text = (data.reply || "").trim();
+      replyEl.textContent = text || "(No reply)";
+      lastReply = text;
       speakBtn.disabled = !lastReply;
-      startBtn.disabled = sessionActive;
-      endBtn.disabled = !sessionActive;
+
+      debateLog.push({ role:"ai", text: lastReply });
+      updateTranscriptUI();
+
+      liveStatus.textContent = "Your turn: rebut or respond.";
+
+      if(lastReply && autoSpeakEl.checked){
+        speakText(lastReply);
+      } else {
+        stopSpeakBtn.disabled = true;
+        skipSpeakBtn.disabled = true;
+      }
+
+    }catch{
+      replyEl.textContent = "Network error.";
+      liveStatus.textContent = "AI opening failed.";
+    }
+  }
+
+  async function sendTurn(){
+    if(!sessionActive) return;
+    const userText = userTextEl.value.trim();
+    if(!userText){
+      liveStatus.textContent = "Please type or dictate something first.";
+      return;
     }
 
-    function startSession() {
-      if (sessionActive) return;
+    stopSpeaking(); // stop any AI speech before new turn
 
-      sessionActive = true;
-      secondsLeft = 300;
-      timerEl.textContent = formatTime(secondsLeft);
-      statusEl.textContent = "Session started.";
-      lastReply = "";
-      replyEl.textContent = "No response yet.";
+    liveStatus.textContent = "Sending to AI…";
+    replyEl.textContent = "Thinking…";
+    speakBtn.disabled = true;
+    stopSpeakBtn.disabled = true;
+    skipSpeakBtn.disabled = true;
 
-      updateControls();
+    const topic = topicEl.value;
+    const difficulty = difficultyEl.value;
+    const studentSide = getStudentSide();
 
-      timerInterval = setInterval(() => {
-        secondsLeft--;
-        timerEl.textContent = formatTime(secondsLeft);
+    debateLog.push({ role:"student", text: userText });
+    updateTranscriptUI();
 
-        if (secondsLeft <= 0) {
-          endSession();
-        }
-      }, 1000);
-    }
+    try{
+      const res = await fetch("/ask",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ topic, stance: studentSide, difficulty, userText })
+      });
 
-    function endSession() {
-      sessionActive = false;
-      clearInterval(timerInterval);
-      timerInterval = null;
-      statusEl.textContent = "Session ended.";
-      updateControls();
-    }
-
-    async function sendToAI() {
-      if (!sessionActive) return;
-
-      const userText = userTextEl.value.trim();
-      if (!userText) {
-        statusEl.textContent = "Please write an argument first.";
+      const data = await res.json();
+      if(!res.ok){
+        replyEl.textContent = data.details || data.error || ("HTTP "+res.status);
+        liveStatus.textContent = "Error contacting AI.";
         return;
       }
 
-      const topic = document.getElementById("topic").value;
-      const stance = document.getElementById("stance").value;
-      const difficulty = document.getElementById("difficulty").value;
+      lastReply = (data.reply || "").trim();
+      replyEl.textContent = lastReply || "(No reply)";
+      speakBtn.disabled = !lastReply;
+      stopSpeakBtn.disabled = true;
+      skipSpeakBtn.disabled = true;
 
-      statusEl.textContent = "Sending to AI...";
-      replyEl.textContent = "Thinking...";
-      speakBtn.disabled = true;
-
-      try {
-        const res = await fetch("/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            topic,
-            stance,
-            difficulty,
-            userText,
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          replyEl.textContent = data.error || "Error";
-          statusEl.textContent = "Error contacting AI.";
-          return;
-        }
-
-        lastReply = data.reply || "";
-        replyEl.textContent = lastReply || "(No reply)";
-        statusEl.textContent = "AI replied.";
-        speakBtn.disabled = !lastReply;
-      } catch (err) {
-        replyEl.textContent = "Network error.";
-        statusEl.textContent = "Failed to reach server.";
+      if(lastReply){
+        debateLog.push({ role:"ai", text: lastReply });
+        updateTranscriptUI();
       }
 
-      updateControls();
+      liveStatus.textContent = "AI replied. Your turn.";
+
+      if(lastReply && autoSpeakEl.checked){
+        speakText(lastReply);
+      }
+
+    }catch{
+      replyEl.textContent = "Network error.";
+      liveStatus.textContent = "Failed to reach server.";
     }
+  }
 
-    startBtn.onclick = startSession;
-    endBtn.onclick = endSession;
-    sendBtn.onclick = sendToAI;
+  // ====== Dictation (AI STT) - Start/Stop recording (Chrome)
+  let micState = { recording:false, stream:null, recorder:null, chunks:[] };
 
-    speakBtn.onclick = () => {
-      if (!lastReply) return;
-      const u = new SpeechSynthesisUtterance(lastReply);
-      u.lang = "en-US";
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
+  function pickMime(){
+    if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) return "audio/ogg;codecs=opus";
+    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) return "audio/webm;codecs=opus";
+    if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
+    return "";
+  }
+  function stopTracks(){
+    try{ if(micState.stream) micState.stream.getTracks().forEach(t=>t.stop()); }catch{}
+    micState.stream = null;
+  }
+
+  async function startRecording(){
+    liveStatus.textContent = "Recording…";
+    micBtn.textContent = "⏹️ Stop recording";
+
+    micState.stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+
+    const mime = pickMime();
+    micState.chunks = [];
+
+    micState.recorder = new MediaRecorder(micState.stream, mime ? { mimeType:mime } : undefined);
+
+    micState.recorder.ondataavailable = (e)=>{ if(e.data && e.data.size>0) micState.chunks.push(e.data); };
+
+    micState.recorder.onerror = (e)=>{
+      console.error("MediaRecorder error:", e);
+      liveStatus.textContent = "Dictation failed: recorder error.";
+      stopTracks();
+      micState.recording=false;
+      micBtn.textContent="🎙️ Start recording";
+      stopRecTimer();
+      recTimerEl.style.display="none";
     };
 
-    timerEl.textContent = formatTime(secondsLeft);
-    updateControls();
-  </script>
+    micState.recorder.start(250); // timeslice => chunks
+    micState.recording = true;
+    startRecTimer();
+  }
+
+  async function stopRecordingAndTranscribe(){
+    liveStatus.textContent = "Stopping…";
+    micBtn.textContent = "🎙️ Start recording";
+    stopRecTimer();
+
+    const recorder = micState.recorder;
+    if(!recorder){
+      liveStatus.textContent="Dictation failed: recorder missing.";
+      recTimerEl.style.display="none";
+      return;
+    }
+
+    const done = new Promise(resolve => { recorder.onstop = resolve; });
+
+    try{
+      recorder.requestData();
+      recorder.stop();
+    }catch(e){ console.error("Stop error:", e); }
+
+    await done;
+    stopTracks();
+
+    const mimeType = recorder.mimeType || "application/octet-stream";
+    const blob = new Blob(micState.chunks, { type:mimeType });
+
+    micState.recorder=null;
+    micState.chunks=[];
+    micState.recording=false;
+
+    if(blob.size < 8000){
+      liveStatus.textContent="Dictation failed: audio too small. Speak louder/closer and try again.";
+      recTimerEl.style.display="none";
+      return;
+    }
+
+    const isOgg = (mimeType||"").includes("ogg");
+    const filename = isOgg ? "speech.ogg" : "speech.webm";
+
+    const fd = new FormData();
+    fd.append("audio", blob, filename);
+
+    liveStatus.textContent="Transcribing…";
+    try{
+      const res = await fetch("/stt", { method:"POST", body:fd });
+      const data = await res.json();
+
+      if(!res.ok){
+        liveStatus.textContent="Dictation failed: " + (data.details || data.error || ("HTTP "+res.status));
+        recTimerEl.style.display="none";
+        return;
+      }
+
+      const text = (data.text||"").trim();
+      if(!text){
+        liveStatus.textContent="Dictation failed: empty transcript.";
+        recTimerEl.style.display="none";
+        return;
+      }
+
+      userTextEl.value += (userTextEl.value ? " " : "") + text;
+      userTextEl.focus();
+      liveStatus.textContent="Dictation added.";
+      recTimerEl.style.display="none";
+    }catch{
+      liveStatus.textContent="Dictation failed: network error.";
+      recTimerEl.style.display="none";
+    }
+  }
+
+  micBtn.onclick = async ()=>{
+    try{
+      if(!micState.recording) await startRecording();
+      else await stopRecordingAndTranscribe();
+    }catch(e){
+      console.error(e);
+      liveStatus.textContent = "Dictation failed: " + (e?.message || e);
+      micState.recording=false;
+      micBtn.textContent="🎙️ Start recording";
+      stopTracks();
+      stopRecTimer();
+      recTimerEl.style.display="none";
+    }
+  };
+
+  // ====== Cleanup
+  cleanupBtn.onclick = async ()=>{
+    const txt = userTextEl.value.trim();
+    if(!txt) return;
+    liveStatus.textContent="Cleaning up…";
+
+    const topic = topicEl.value;
+    const difficulty = difficultyEl.value;
+    const studentSide = getStudentSide();
+
+    const prompt =
+`Clean up my spoken English for a school debate.
+Add punctuation, fix grammar, keep my meaning.
+Return only the improved text.
+
+Text:
+${txt}`;
+
+    try{
+      const res = await fetch("/prep",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ topic, stance: studentSide, difficulty, userText: prompt })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        liveStatus.textContent = data.details || data.error || ("HTTP "+res.status);
+        return;
+      }
+      userTextEl.value = (data.reply||"").trim();
+      liveStatus.textContent = "Cleaned and ready.";
+    }catch{
+      liveStatus.textContent = "Network error.";
+    }
+  };
+
+  // ====== Feedback
+  function transcriptAsText(){
+    const topic = topicEl.value;
+    const studentSide = getStudentSide();
+    const aiSide = getAiSide();
+    const level = difficultyEl.value;
+    const starter = getStarter();
+
+    let t = `Motion: ${topic}\nStudent side: ${studentSide}\nAI side: ${aiSide}\nLevel: ${level}\nStarter: ${starter}\n\nTranscript:\n`;
+    for(const turn of debateLog){
+      t += (turn.role==="student" ? "STUDENT: " : "AI: ") + turn.text + "\n\n";
+    }
+    return t.trim();
+  }
+
+  async function endSessionAndFeedback(){
+    stopSpeaking();
+
+    if(micState.recording){
+      await stopRecordingAndTranscribe();
+    }
+
+    if(!sessionActive){
+      showView("feedback");
+      feedbackTab.disabled=false;
+      return;
+    }
+
+    sessionActive=false;
+    clearInterval(timerInt);
+    timerInt=null;
+
+    sendBtn.disabled=true;
+    endBtn.disabled=true;
+    startBtn.disabled=false;
+
+    liveStatus.textContent="Generating feedback…";
+    feedbackReplyEl.textContent="Thinking…";
+
+    feedbackTab.disabled=false;
+    showView("feedback");
+
+    const topic = topicEl.value;
+    const difficulty = difficultyEl.value;
+    const studentSide = getStudentSide();
+    const aiSide = getAiSide();
+
+    const prompt =
+`You are a strict but supportive debate coach for a high-school student.
+
+Give end-of-session feedback based on the transcript.
+Use clear English. Be practical and specific.
+
+Return this structure exactly:
+
+1) SUMMARY (2-3 lines)
+
+2) SCORES (0-10)
+- Arguments:
+- Structure:
+- Evidence/examples:
+- Rebuttals:
+- English:
+
+3) WHAT YOU DID WELL (3 bullets)
+
+4) WHAT TO IMPROVE NEXT (3 bullets)
+
+5) LANGUAGE FIXES (5 examples)
+Format each:
+Original: "..."
+Improved: "..."
+
+6) UPGRADED OPENING (25 seconds max)
+
+7) UPGRADED CLOSING (15 seconds max)
+
+Context:
+Motion: "${topic}"
+Student side: ${studentSide}
+Opponent side: ${aiSide}
+
+${transcriptAsText()}`;
+
+    try{
+      const res = await fetch("/prep",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ topic, stance: studentSide, difficulty, userText: prompt })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        feedbackReplyEl.textContent = data.details || data.error || ("HTTP "+res.status);
+        liveStatus.textContent = "Feedback failed.";
+        return;
+      }
+      feedbackReplyEl.textContent = (data.reply || "(No feedback)").trim();
+      liveStatus.textContent = "Session ended.";
+    }catch{
+      feedbackReplyEl.textContent = "Network error.";
+      liveStatus.textContent = "Feedback failed.";
+    }
+  }
+
+  // ====== Export / Print helpers
+  function downloadText(filename, text){
+    const blob = new Blob([text], { type:"text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 500);
+  }
+
+  function prepExportText(){
+    updatePrepSummary();
+    return prepSummaryEl.textContent.trim();
+  }
+  function debateExportText(){
+    const header = `Topic: ${topicEl.value}\nStudent: ${getStudentSide()} | AI: ${getAiSide()}\nLevel: ${difficultyEl.value}\nStarter: ${getStarter()}\n\n`;
+    const transcript = debateLog.map(t => (t.role==="student" ? "STUDENT: " : "AI: ") + t.text).join("\n\n");
+    return (header + (transcript || "(No transcript yet)")).trim();
+  }
+  function feedbackExportText(){
+    const header = `Topic: ${topicEl.value}\nStudent: ${getStudentSide()} | AI: ${getAiSide()}\nLevel: ${difficultyEl.value}\nStarter: ${getStarter()}\n\n`;
+    return (header + (feedbackReplyEl.textContent||"")).trim();
+  }
+
+  exportPrepBtn.onclick = ()=> downloadText("debate_prep.txt", prepExportText());
+  exportDebateBtn.onclick = ()=> downloadText("debate_transcript.txt", debateExportText());
+  exportFeedbackBtn.onclick = ()=> downloadText("debate_feedback.txt", feedbackExportText());
+
+  printPrepBtn.onclick = ()=> { updatePrepSummary(); showView("prep"); setTimeout(()=>window.print(), 50); };
+  printDebateBtn.onclick = ()=> { showView("debate"); setTimeout(()=>window.print(), 50); };
+  printFeedbackBtn.onclick = ()=> { showView("feedback"); setTimeout(()=>window.print(), 50); };
+
+  // ====== Navigation
+  prepTab.onclick = ()=>showView("prep");
+  debateTab.onclick = ()=>showView("debate");
+  feedbackTab.onclick = ()=>showView("feedback");
+
+  // ====== Start debate (from Prep)
+  function startSession(){
+    if(sessionActive) return;
+
+    updateDebateHeader();
+    sessionActive=true;
+    secondsLeft=300;
+    timerEl.textContent=formatTime(secondsLeft);
+
+    sendBtn.disabled=false;
+    endBtn.disabled=false;
+    startBtn.disabled=true;
+
+    liveStatus.textContent="Session started.";
+
+    timerInt=setInterval(()=>{
+      secondsLeft--;
+      timerEl.textContent=formatTime(secondsLeft);
+      if(secondsLeft<=0){
+        clearInterval(timerInt);
+        timerInt=null;
+        endSessionAndFeedback();
+      }
+    },1000);
+
+    aiOpeningIfNeeded();
+  }
+
+  readyBtn.onclick = ()=>{
+    const opening = openingBox.value.trim();
+    const points = pointsBox.value.trim();
+    userTextEl.value = [opening, points].filter(Boolean).join("\n\n");
+
+    updateDebateHeader();
+    showView("debate");
+    startSession();
+    if(getStarter()==="student"){
+      liveStatus.textContent = "Your turn: deliver your opening.";
+    }
+  };
+
+  // Debate controls
+  startBtn.onclick = startSession;
+  endBtn.onclick = endSessionAndFeedback;
+  sendBtn.onclick = sendTurn;
+
+  copyFeedbackBtn.onclick = async ()=>{
+    const t = feedbackReplyEl.textContent || "";
+    try{ await navigator.clipboard.writeText(t); }catch{}
+  };
+
+  newSessionBtn.onclick = ()=>{
+    resetDebate();
+    feedbackTab.disabled=true;
+    feedbackReplyEl.textContent = "No feedback yet.";
+    showView("prep");
+  };
+
+  // ====== Init
+  starterChooser.style.display="none";
+  updatePrepSummary();
+  resetDebate();
+  showView("prep");
+</script>
 </body>
 </html>

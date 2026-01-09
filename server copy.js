@@ -1,8 +1,6 @@
 // server.js (CommonJS) — DebateCoach backend + /stt (AI dictation)
-// Install deps:
-//   npm i express cors dotenv openai multer
-// Run:
-//   node server.js
+// Requires: npm i express cors dotenv openai multer
+// Run: node server.js
 
 const path = require("path");
 const fs = require("fs");
@@ -31,7 +29,7 @@ if (!apiKey) {
 
 const client = new OpenAI({ apiKey });
 
-// ---------- Upload temp dir (STT) ----------
+// ---------- Upload (STT) ----------
 const TMP_DIR = path.join(__dirname, "tmp");
 if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
 
@@ -216,66 +214,7 @@ app.post("/ask", async (req, res) => {
 });
 
 // ✅ Speech-to-Text (upload audio blob from browser)
-app.post("/stt", upload.single("audio"), async (req, res) => {
-  let tmpPath = null;
-  let finalPath = null;
-
-  try {
-    console.log("📝 /stt received");
-
-    if (!req.file?.path) {
-      return res.status(400).json({ error: "Missing audio file" });
-    }
-
-    tmpPath = req.file.path;
-
-    const ext =
-      (req.file.originalname && path.extname(req.file.originalname).toLowerCase()) ||
-      (req.file.mimetype?.includes("wav") ? ".wav" :
-       req.file.mimetype?.includes("ogg") ? ".ogg" :
-       req.file.mimetype?.includes("webm") ? ".webm" :
-       req.file.mimetype?.includes("mp4") ? ".m4a" : ".wav");
-
-    finalPath = tmpPath + ext;
-    fs.renameSync(tmpPath, finalPath);
-
-    const stat = fs.statSync(finalPath);
-    const head12 = fs.readFileSync(finalPath).subarray(0, 12).toString("ascii");
-    const head32hex = fs.readFileSync(finalPath).subarray(0, 32).toString("hex");
-
-    console.log("📁 file:", finalPath);
-    console.log("📋 original:", req.file.originalname, "mime:", req.file.mimetype);
-    console.log("📊 size:", stat.size, "bytes");
-    console.log("🔎 HEAD12:", head12);
-    console.log("🔎 HEX32 :", head32hex);
-
-    if (stat.size < 2000) {
-      return res.status(400).json({ error: "Audio too small / empty" });
-    }
-
-    const transcription = await client.audio.transcriptions.create({
-      file: fs.createReadStream(finalPath),
-      model: "whisper-1",
-      language: "en",
-    });
-
-    res.json({ text: transcription.text || "" });
-  } catch (err) {
-    console.error("/stt error:", err);
-    const status = err?.status || 500;
-    res.status(status).json({
-      error: "STT failed",
-      details: err?.message || String(err),
-    });
-  } finally {
-    try {
-      if (finalPath && fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
-      else if (tmpPath && fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-    } catch (cleanupErr) {
-      console.error("Failed to cleanup temp file:", cleanupErr);
-    }
-  }
-});
+v
 
 // ---------- start ----------
 app.listen(PORT, () => {
