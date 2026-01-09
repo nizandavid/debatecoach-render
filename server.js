@@ -1,7 +1,7 @@
-// server.js (CommonJS) — DebateCoach backend + /stt (AI dictation)
-// Install deps:
+// server.js (CommonJS) — DebateCoach backend
+// Deps:
 //   npm i express cors dotenv openai multer
-// Run:
+// Run locally:
 //   node server.js
 
 const path = require("path");
@@ -12,11 +12,10 @@ const multer = require("multer");
 require("dotenv").config();
 
 const OpenAI = require("openai");
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 app.use(cors());
-
-// JSON for /ask and /prep
 app.use(express.json({ limit: "2mb" }));
 
 // Serve static frontend
@@ -24,20 +23,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  console.error("❌ Missing OPENAI_API_KEY in .env");
-}
-
-const client = new OpenAI({ apiKey });
-
-// ---------- Upload temp dir (STT) ----------
-const TMP_DIR = path.join(__dirname, "tmp");
-if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
-
-const upload = multer({ dest: TMP_DIR });
-
-// ---------- helpers ----------
+// -------------------- helpers --------------------
 function safeStr(x, fallback = "") {
   return typeof x === "string" ? x : fallback;
 }
@@ -53,13 +39,43 @@ function sanitizeStance(s) {
   return v === "CON" ? "CON" : "PRO";
 }
 
+async function chat({ system, messages, temperature = 0.7 }) {
+  const resp = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature,
+    messages: [{ role: "system", content: system }, ...messages],
+  });
+  return resp.choices?.[0]?.message?.content?.trim() || "";
+}
+
+// -------------------- prompts --------------------
 function topicsSystemPrompt() {
-  return [
-    "You are a debate coach for Israeli high-school students.",
-    "Generate concise, classroom-appropriate debate motions (one sentence each).",
-    "Avoid hate, slurs, graphic content, or illegal instructions.",
-    "Return exactly 10 different topics.",
-  ].join(" ");
+  // ✅ זה ה-PROMPT הסופי שבחרת
+  return `You are a debate coach for Israeli high-school students (ages 14–18).
+Generate EXACTLY 10 debate motions (one sentence each) that are engaging and relevant to teens.
+
+Hard rules:
+1) Each motion must be from a DIFFERENT category, in this exact order:
+   1. Technology / AI
+   2. Social media / youth culture
+   3. Education / school life
+   4. Israeli society (daily life)
+   5. Civic / democracy / law
+   6. Economy / money / work
+   7. Ethics / moral dilemma
+   8. Environment / climate
+   9. Health / lifestyle / sports
+   10. Global affairs / international relations
+2) Avoid repeating the same topic idea in different wording.
+3) Do NOT start every sentence with “This house believes/This house would”.
+   Vary the phrasing naturally.
+4) Keep each motion clear, concrete, and debatable (not a vague discussion question).
+5) No hate, slurs, graphic content, or illegal instructions.
+6) Use simple-to-medium English (spoken-friendly).
+
+Output format:
+Return ONLY a JSON array of 10 strings. No extra text, no numbering, no markdown.
+Example: ["...", "...", ...]`;
 }
 
 function prepSystemPrompt({ topic, stance, difficulty }) {
@@ -72,13 +88,13 @@ function prepSystemPrompt({ topic, stance, difficulty }) {
 
   return [
     "You are a friendly debate coach.",
-    "Your job: help the student prepare arguments, examples, rebuttals, and openings.",
-    "Be practical for spoken debate (not an essay).",
+    "This is PREP mode (before the debate).",
+    "Give practical speaking-ready bullets, examples, and phrases.",
+    "If helpful, suggest structure: claim → reason → example.",
     level,
     `Topic: "${topic}"`,
-    `Student stance: ${stance}.`,
-    "When asked for bullet points, keep them short and punchy.",
-  ].join(" ");
+    `Student stance: ${stance}`,
+  ].join("\n");
 }
 
 function askSystemPrompt({ topic, stance, difficulty }) {
@@ -91,38 +107,28 @@ function askSystemPrompt({ topic, stance, difficulty }) {
 
   return [
     "You simulate a live school debate.",
-    "First, respond as the opposing debater (rebut + push your own point).",
-    "Then give 2 short coaching tips to improve delivery (clarity, structure, evidence).",
-    "Format:\nOPPONENT:\n...\n\nCOACH TIPS:\n- ...\n- ...",
+    "Respond as the OPPONENT of the student.",
+    "Be concise and sharp: 2–6 sentences.",
+    "Ask EXACTLY ONE follow-up question at the end.",
     level,
     `Motion: "${topic}"`,
-    `Student stance: ${stance}. So you must argue the opposite side in OPPONENT section.`,
-  ].join(" ");
+    `Student stance: ${stance} (so you argue the opposite).`,
+  ].join("\n");
 }
 
-async function chat({ system, messages }) {
-  const resp = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.7,
-    messages: [{ role: "system", content: system }, ...messages],
-  });
-
-  return resp.choices?.[0]?.message?.content?.trim() || "";
-}
-
-// ---------- routes ----------
+// -------------------- routes --------------------
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-// Topics
+// 🔹 Topics
 app.get("/topics", async (_req, res) => {
   try {
     const system = topicsSystemPrompt();
-    const userMsg =
-      'Give me 10 debate topics as a JSON array ONLY, no extra text. Example: ["...","..."]';
+    const userMsg = "Return ONLY a valid JSON array of 10 strings. No other text.";
 
     const text = await chat({
       system,
       messages: [{ role: "user", content: userMsg }],
+      temperature: 0.6,
     });
 
     let topics = [];
@@ -130,18 +136,20 @@ app.get("/topics", async (_req, res) => {
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) topics = parsed.map((t) => String(t)).filter(Boolean);
     } catch {
+      // fallback if model returns lines
       topics = text
         .split("\n")
         .map((s) => s.replace(/^[-*\d.\s]+/, "").trim())
-        .filter(Boolean);
+        .filter(Boolean)
+        .slice(0, 10);
     }
 
     topics = topics.slice(0, 10);
-    if (!topics.length) topics = ["Should school start later in the morning?"];
+    if (!topics.length) topics = ["Should schools allow AI tools for homework?"];
 
     res.json({ topics });
   } catch (err) {
-    console.error("/topics:", err);
+    console.error("❌ /topics:", err);
     res.status(500).json({
       error: "Failed to generate topics",
       details: err?.message || String(err),
@@ -149,7 +157,7 @@ app.get("/topics", async (_req, res) => {
   }
 });
 
-// Prep (supports either messages[] OR userText one-shot)
+// 🔹 Prep (supports either messages[] OR userText one-shot)
 app.post("/prep", async (req, res) => {
   try {
     const topic = safeStr(req.body?.topic, "Debate topic");
@@ -177,10 +185,10 @@ app.post("/prep", async (req, res) => {
       return res.status(400).json({ error: "Missing messages or userText" });
     }
 
-    const reply = await chat({ system, messages });
+    const reply = await chat({ system, messages, temperature: 0.7 });
     res.json({ reply });
   } catch (err) {
-    console.error("/prep:", err);
+    console.error("❌ /prep:", err);
     res.status(500).json({
       error: "Prep failed",
       details: err?.message || String(err),
@@ -188,7 +196,7 @@ app.post("/prep", async (req, res) => {
   }
 });
 
-// Debate turn
+// 🔹 Debate turn
 app.post("/ask", async (req, res) => {
   try {
     const topic = safeStr(req.body?.topic, "Debate topic");
@@ -200,14 +208,12 @@ app.post("/ask", async (req, res) => {
 
     const system = askSystemPrompt({ topic, stance, difficulty });
 
-    const messages = [
-      { role: "user", content: `My argument:\n${userText}`.slice(0, 6000) },
-    ];
+    const messages = [{ role: "user", content: `My argument:\n${userText}`.slice(0, 6000) }];
 
-    const reply = await chat({ system, messages });
+    const reply = await chat({ system, messages, temperature: 0.7 });
     res.json({ reply });
   } catch (err) {
-    console.error("/ask:", err);
+    console.error("❌ /ask:", err);
     res.status(500).json({
       error: "Ask failed",
       details: err?.message || String(err),
@@ -215,55 +221,52 @@ app.post("/ask", async (req, res) => {
   }
 });
 
-// ✅ Speech-to-Text (upload audio blob from browser)
+// -------------------- STT (optional) --------------------
+const TMP_DIR = path.join(__dirname, "tmp");
+if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
+const upload = multer({ dest: TMP_DIR });
+
+function extFromFile(reqFile) {
+  const orig = (reqFile.originalname || "").toLowerCase();
+  const byName = path.extname(orig);
+  if (byName) return byName;
+
+  const mt = (reqFile.mimetype || "").toLowerCase();
+  if (mt.includes("wav")) return ".wav";
+  if (mt.includes("mpeg") || mt.includes("mp3")) return ".mp3";
+  if (mt.includes("mp4") || mt.includes("m4a")) return ".m4a";
+  if (mt.includes("ogg")) return ".ogg";
+  if (mt.includes("webm")) return ".webm";
+  return ".wav";
+}
+
 app.post("/stt", upload.single("audio"), async (req, res) => {
   let tmpPath = null;
   let finalPath = null;
 
   try {
-    console.log("📝 /stt received");
-
-    if (!req.file?.path) {
-      return res.status(400).json({ error: "Missing audio file" });
-    }
+    if (!req.file?.path) return res.status(400).json({ error: "Missing audio file" });
 
     tmpPath = req.file.path;
-
-    const ext =
-      (req.file.originalname && path.extname(req.file.originalname).toLowerCase()) ||
-      (req.file.mimetype?.includes("wav") ? ".wav" :
-       req.file.mimetype?.includes("ogg") ? ".ogg" :
-       req.file.mimetype?.includes("webm") ? ".webm" :
-       req.file.mimetype?.includes("mp4") ? ".m4a" : ".wav");
-
+    const ext = extFromFile(req.file);
     finalPath = tmpPath + ext;
     fs.renameSync(tmpPath, finalPath);
 
     const stat = fs.statSync(finalPath);
-    const head12 = fs.readFileSync(finalPath).subarray(0, 12).toString("ascii");
-    const head32hex = fs.readFileSync(finalPath).subarray(0, 32).toString("hex");
-
-    console.log("📁 file:", finalPath);
-    console.log("📋 original:", req.file.originalname, "mime:", req.file.mimetype);
-    console.log("📊 size:", stat.size, "bytes");
-    console.log("🔎 HEAD12:", head12);
-    console.log("🔎 HEX32 :", head32hex);
-
-    if (stat.size < 2000) {
-      return res.status(400).json({ error: "Audio too small / empty" });
+    if (stat.size < 2500) {
+      return res.status(400).json({ error: "Audio too small. Speak louder/closer and try again." });
     }
 
-    const transcription = await client.audio.transcriptions.create({
+    const tr = await client.audio.transcriptions.create({
       file: fs.createReadStream(finalPath),
       model: "whisper-1",
       language: "en",
     });
 
-    res.json({ text: transcription.text || "" });
+    res.json({ text: tr.text || "" });
   } catch (err) {
-    console.error("/stt error:", err);
-    const status = err?.status || 500;
-    res.status(status).json({
+    console.error("❌ /stt:", err);
+    res.status(err?.status || 500).json({
       error: "STT failed",
       details: err?.message || String(err),
     });
@@ -271,13 +274,19 @@ app.post("/stt", upload.single("audio"), async (req, res) => {
     try {
       if (finalPath && fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
       else if (tmpPath && fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-    } catch (cleanupErr) {
-      console.error("Failed to cleanup temp file:", cleanupErr);
-    }
+    } catch {}
   }
 });
 
-// ---------- start ----------
+// -------------------- SPA fallback (no "*" bug) --------------------
+// IMPORTANT: Express 5 can throw on app.get("*"). Use regex instead.
+app.get(/.*/, (req, res, next) => {
+  // if route not handled and file not found, serve index.html
+  if (req.method !== "GET") return next();
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// -------------------- start --------------------
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
