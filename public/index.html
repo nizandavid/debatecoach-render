@@ -1,473 +1,1044 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>DebateCoach</title>
-
-<style>
-:root{
-  --bg1:#e6e9ff;
-  --bg2:#f2f6ff;
-  --card:#ffffff;
-  --border:#e3e7ef;
-  --text:#0f172a;
-  --muted:#5b6475;
-  --accent:#4f7cff;
-}
-
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
-  /* מעט כהה יותר */
-  background:linear-gradient(180deg,#dfe5ff 0%, #eef2ff 35%, #ffffff 70%);
-  color:var(--text);
-}
-
-.container{
-  max-width:1100px;
-  margin:0 auto;
-  padding:24px;
-}
-
-/* ---------- Header ---------- */
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:16px;
-}
-
-h1{
-  margin:0;
-  font-size:36px;
-  letter-spacing:-.5px;
-}
-
-.subtitle{
-  color:var(--muted);
-  margin-top:4px;
-  font-size:15px;
-}
-
-button{
-  font-size:15px;
-  padding:10px 14px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:#fff;
-  cursor:pointer;
-}
-
-button.primary{
-  background:var(--accent);
-  border-color:var(--accent);
-  color:#fff;
-}
-
-button.ghost{
-  background:transparent;
-}
-
-button:disabled{
-  opacity:.5;
-  cursor:not-allowed;
-}
-
-/* ---------- Topic ---------- */
-.topicBox{
-  margin:28px 0 22px;
-  padding:22px;
-  background:var(--card);
-  border:2px solid var(--accent);
-  border-radius:20px;
-  text-align:center;
-  box-shadow:0 10px 30px rgba(79,124,255,.18);
-}
-
-.topicLabel{
-  font-size:13px;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:var(--muted);
-}
-
-.topicText{
-  font-size:28px;
-  font-weight:800;
-  margin-top:6px;
-}
-
-/* ---------- Controls ---------- */
-.row{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:18px;
-  margin-top:16px;
-}
-
-.pill{
-  padding:6px 12px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background:#f8faff;
-  font-size:14px;
-}
-
-/* ---------- Inputs ---------- */
-textarea{
-  width:100%;
-  min-height:140px;
-  padding:14px;
-  font-size:17px;
-  line-height:1.5;
-  border-radius:16px;
-  border:1px solid var(--border);
-  outline:none;
-  resize:vertical;
-  background:#fff;
-}
-
-textarea:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 4px rgba(79,124,255,.2);
-}
-
-input, select{
-  width:100%;
-  padding:12px 12px;
-  border-radius:14px;
-  border:1px solid var(--border);
-  font-size:16px;
-  background:#fff;
-  outline:none;
-}
-
-input:focus, select:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 4px rgba(79,124,255,.18);
-}
-
-.smallBtn{
-  padding:10px 12px;
-  border-radius:12px;
-}
-
-/* ---------- Debate ---------- */
-.sectionTitle{
-  font-weight:800;
-  margin-bottom:8px;
-}
-
-#reply{
-  font-size:18px;
-  line-height:1.55;
-  background:#f8faff;
-  padding:14px;
-  border-radius:16px;
-  border:1px solid var(--border);
-}
-
-/* ---------- Modal ---------- */
-.modalOverlay{
-  position:fixed;
-  inset:0;
-  background:rgba(15,23,42,.45);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  padding:18px;
-}
-
-.modalOverlay.open{display:flex}
-
-.modal{
-  width:min(860px,100%);
-  background:#fff;
-  border-radius:18px;
-  padding:18px;
-  border:1px solid var(--border);
-  box-shadow:0 20px 60px rgba(0,0,0,.25);
-}
-
-.modalHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-}
-
-.modalHeader h2{margin:0}
-
-.grid2{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-}
-
-@media(max-width:720px){
-  .grid2{grid-template-columns:1fr}
-}
-
-.divider{
-  height:1px;
-  background:#eef1f6;
-  margin:14px 0;
-}
-
-.hint{
-  color:var(--muted);
-  font-size:13px;
-  margin-top:8px;
-}
-</style>
-</head>
-
-<body>
-<div class="container">
-
-<header>
-  <div>
-    <h1>DebateCoach</h1>
-    <div class="subtitle">
-      One screen. You research elsewhere — here you practice debating.
-    </div>
-  </div>
-  <button id="settingsBtn" class="ghost">⚙️ Settings</button>
-</header>
-
-<!-- TOPIC -->
-<div class="topicBox">
-  <div class="topicLabel">Debate topic</div>
-  <div class="topicText" id="topicText">
-    Make English the language of instruction in Israeli schools
-  </div>
-</div>
-
-<!-- SESSION CONTROLS -->
-<div class="card">
-  <div class="row">
-    <span class="pill" id="turnPill">Your turn</span>
-    <span class="pill" id="timer">05:00</span>
-    <button id="startBtn" class="primary">⏱ Start session</button>
-    <button id="endBtn" disabled>End</button>
-    <span style="flex:1"></span>
-    <span class="pill" id="speakPill">Auto-speak: ON</span>
-    <button id="toggleSpeakBtn" class="smallBtn">Toggle</button>
-    <button id="stopSpeakBtn" class="smallBtn" disabled>Stop speaking</button>
-  </div>
-</div>
-
-<!-- ARGUMENT -->
-<div class="card">
-  <div class="sectionTitle">Your argument</div>
-  <textarea id="userText"
-    placeholder="Type, paste from ChatGPT, or dictate your argument here…"></textarea>
-
-  <div class="row" style="margin-top:12px">
-    <button id="recBtn" class="primary">🎙 Start recording</button>
-    <span class="pill" id="recTime">00:00</span>
-    <button id="cleanupBtn">✨ Clean up</button>
-    <button id="teacherBtn">🧑‍🏫 Teacher corrections</button>
-  </div>
-
-  <div style="margin-top:10px">
-    <div class="sectionTitle">Transcript (what the mic heard)</div>
-    <textarea id="transcript" readonly></textarea>
-  </div>
-
-  <div class="row" style="margin-top:12px">
-    <button id="doneBtn" class="primary">✅ I’m done (computer replies)</button>
-  </div>
-</div>
-
-<!-- AI REPLY -->
-<div class="card">
-  <div class="sectionTitle">Computer reply</div>
-  <div id="reply">No reply yet.</div>
-</div>
-
-</div>
-
-<!-- SETTINGS MODAL -->
-<div id="settingsOverlay" class="modalOverlay">
-  <div class="modal">
-    <div class="modalHeader">
-      <h2>Settings</h2>
-      <button id="closeSettingsBtn">✕</button>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="grid2">
-      <!-- TOPIC SETTINGS -->
-      <div class="card" style="margin-top:0">
-        <div class="sectionTitle">Topic</div>
-
-        <input id="topicInput" placeholder="Type a debate topic..." />
-
-        <div class="row" style="margin-top:10px">
-          <button id="suggestTopicsBtn" class="smallBtn">💡 Suggest topics</button>
-          <button id="randomTopicBtn" class="smallBtn">🎲 Random</button>
-        </div>
-
-        <div style="margin-top:10px">
-          <select id="topicSelect">
-            <option value="">— pick from suggestions —</option>
-          </select>
-        </div>
-
-        <div class="row" style="justify-content:flex-end;margin-top:12px">
-          <button id="applyTopicBtn" class="primary">Apply topic</button>
-        </div>
-
-        <div class="hint">
-          Tip: you can type your own topic, or ask for suggestions and pick one.
-        </div>
-      </div>
-
-      <!-- ROLE / DIFFICULTY SETTINGS -->
-      <div class="card" style="margin-top:0">
-        <div class="sectionTitle">Roles</div>
-
-        <div class="row" style="gap:10px">
-          <span class="pill">Student is:</span>
-          <select id="studentSide" style="flex:1;min-width:160px">
-            <option value="PRO" selected>PRO</option>
-            <option value="CON">CON</option>
-          </select>
-        </div>
-
-        <div class="hint" style="margin-top:8px">Computer automatically takes the opposite side.</div>
-
-        <div class="divider"></div>
-
-        <div class="sectionTitle">Difficulty</div>
-        <select id="difficulty">
-          <option>Easy</option>
-          <option selected>Medium</option>
-          <option>Hard</option>
-        </select>
-
-        <div class="row" style="justify-content:flex-end;margin-top:12px">
-          <button id="applySettingsBtn" class="primary">Apply roles</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-/* ---------- Elements ---------- */
-const topicTextEl = document.getElementById("topicText");
-const overlay = document.getElementById("settingsOverlay");
-const settingsBtn = document.getElementById("settingsBtn");
-const closeSettingsBtn = document.getElementById("closeSettingsBtn");
-
-const topicInput = document.getElementById("topicInput");
-const suggestTopicsBtn = document.getElementById("suggestTopicsBtn");
-const randomTopicBtn = document.getElementById("randomTopicBtn");
-const topicSelect = document.getElementById("topicSelect");
-const applyTopicBtn = document.getElementById("applyTopicBtn");
-
-const studentSideEl = document.getElementById("studentSide");
-const difficultyEl = document.getElementById("difficulty");
-const applySettingsBtn = document.getElementById("applySettingsBtn");
-
-/* ---------- State ---------- */
-let suggestedTopics = [];
-let autoSpeak = true;
-
-/* ---------- Modal open/close ---------- */
-settingsBtn.onclick = () => overlay.classList.add("open");
-closeSettingsBtn.onclick = () => overlay.classList.remove("open");
-overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove("open"); };
-
-/* ---------- Topic helpers ---------- */
-function setTopic(t){
-  const cleaned = (t || "").trim();
-  if(!cleaned) return;
-  topicTextEl.textContent = cleaned;
-  topicInput.value = cleaned;
-}
-
-function currentTopic(){
-  return (topicInput.value || topicTextEl.textContent || "").trim();
-}
-
-/* Init topic input from main display */
-topicInput.value = topicTextEl.textContent.trim();
-
-/* ---------- Suggest topics ---------- */
-suggestTopicsBtn.onclick = async () => {
-  suggestTopicsBtn.disabled = true;
-  suggestTopicsBtn.textContent = "Generating…";
-  try{
-    const res = await fetch("/topics");
-    const data = await res.json();
-    if(!res.ok) throw new Error((data && (data.error || data.details)) || "Failed");
-
-    suggestedTopics = Array.isArray(data.topics) ? data.topics : [];
-
-    topicSelect.innerHTML = `<option value="">— pick from suggestions —</option>`;
-    for(const t of suggestedTopics){
-      const opt = document.createElement("option");
-      opt.value = t;
-      opt.textContent = t;
-      topicSelect.appendChild(opt);
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DebateCoach</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --border:#dde3ee;
+      --text:#0f172a;
+      --muted:#5b677a;
+
+      /* Slightly darker (user asked ~20% darker) but still light */
+      --panel:#eef2f8;          /* was lighter before */
+      --panel2:#e6ecf6;
+
+      --primary:#2563eb;
+      --primary2:#1d4ed8;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --warning:#f59e0b;
+
+      --shadow:0 8px 30px rgba(15, 23, 42, .08);
+      --radius:16px;
     }
-  }catch(err){
-    alert("Topics failed: " + (err?.message || err));
-  }finally{
-    suggestTopicsBtn.disabled = false;
-    suggestTopicsBtn.textContent = "💡 Suggest topics";
-  }
-};
 
-topicSelect.onchange = () => {
-  if(topicSelect.value) topicInput.value = topicSelect.value;
-};
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,var(--bg), #ffffff 40%);
+    }
 
-randomTopicBtn.onclick = () => {
-  if(!suggestedTopics.length){
-    alert("No suggestions yet. Click 'Suggest topics' first.");
-    return;
-  }
-  const t = suggestedTopics[Math.floor(Math.random()*suggestedTopics.length)];
-  topicInput.value = t;
-};
+    .wrap{
+      max-width:1100px;
+      margin:18px auto 40px;
+      padding:0 16px;
+    }
 
-applyTopicBtn.onclick = () => {
-  setTopic(currentTopic());
-  overlay.classList.remove("open");
-};
+    .topbar{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
 
-/* ---------- Roles / difficulty apply (kept minimal for now) ---------- */
-applySettingsBtn.onclick = () => {
-  // כאן בעתיד נחבר ללוגיקה של /ask כדי שהמחשב יקח את הצד הנגדי,
-  // אבל כרגע זה רק נשמר ב-UI (השרת אצלך כבר יודע לעבוד עם stance).
-  overlay.classList.remove("open");
-};
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .brand h1{ margin:0; font-size:22px; letter-spacing:.2px; }
+    .brand .muted{ color:var(--muted); font-size:14px; }
 
-/* ---------- Auto-speak toggle (UI only here) ---------- */
-const speakPill = document.getElementById("speakPill");
-document.getElementById("toggleSpeakBtn").onclick = () => {
-  autoSpeak = !autoSpeak;
-  speakPill.textContent = "Auto-speak: " + (autoSpeak ? "ON" : "OFF");
-};
-</script>
+    .rightTop{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
 
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:rgba(255,255,255,.8);
+      color:var(--muted);
+      font-size:13px;
+      white-space:nowrap;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:15px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition:transform .03s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ background:#f8fafc; }
+    .btn:active{ transform:translateY(1px); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .btn.primary{
+      background:var(--primary);
+      border-color:var(--primary);
+      color:#fff;
+    }
+    .btn.primary:hover{ background:var(--primary2); border-color:var(--primary2); }
+
+    .btn.success{
+      background:var(--success);
+      border-color:var(--success);
+      color:#fff;
+    }
+    .btn.success:hover{ filter:brightness(.95); }
+
+    .btn.danger{
+      background:#fff5f5;
+      border-color:#fecaca;
+      color:var(--danger);
+    }
+    .btn.danger:hover{ background:#ffecec; }
+
+    .btn.ghost{
+      background:transparent;
+      border-color:var(--border);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+
+    /* Topic bar big + centered */
+    .topicBar{
+      background:linear-gradient(180deg,var(--panel), var(--panel2));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:var(--shadow);
+      margin-bottom:14px;
+    }
+    .topicTitle{
+      margin:0 0 10px;
+      font-size:13px;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      text-align:center;
+    }
+    .topicLine{
+      margin:0;
+      font-size:22px;
+      font-weight:900;
+      text-align:center;
+      line-height:1.25;
+      white-space:nowrap;           /* keep in one line */
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    @media (max-width:680px){
+      .topicLine{
+        white-space:normal;          /* allow wrap on small screens */
+      }
+    }
+
+    .sectionTitle{
+      font-weight:900;
+      font-size:14px;
+      margin:0 0 10px;
+      color:#0b1220;
+      letter-spacing:.2px;
+    }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .row.between{ justify-content:space-between; }
+
+    .small{ font-size:13px; color:var(--muted); }
+    .status{ margin-top:8px; font-size:14px; color:var(--muted); min-height:20px; }
+
+    .timerPill{
+      font-weight:900;
+      color:#0b1220;
+    }
+
+    /* Editor */
+    .editorWrap{
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      padding:10px;
+      background:#fbfcff;
+      border-bottom:1px solid var(--border);
+    }
+    .tool{
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#fff;
+      cursor:pointer;
+      font-size:14px;
+    }
+    .tool:hover{ background:#f8fafc; }
+    .tool:active{ transform:translateY(1px); }
+
+    .editor{
+      padding:12px;
+      min-height:170px;
+      outline:none;
+      font-size:18px;
+      line-height:1.55;
+    }
+    .editor:empty:before{
+      content: attr(data-placeholder);
+      color:#94a3b8;
+    }
+
+    .box{
+      width:100%;
+      min-height:120px;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fff;
+      font-size:16px;
+      line-height:1.5;
+      resize:vertical;
+    }
+    .box[readonly]{ background:#f8fafc; }
+
+    .reply{
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fff;
+      padding:12px;
+      min-height:130px;
+      font-size:17px;
+      line-height:1.55;
+    }
+    .reply h3{ margin:10px 0 8px; font-size:18px; }
+    .reply ul{ margin:8px 0 12px 22px; }
+    .reply li{ margin:6px 0; }
+    .reply b{ font-weight:900; }
+
+    /* Modal */
+    .overlay{
+      position:fixed; inset:0;
+      background:rgba(15,23,42,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:50;
+    }
+    .modal{
+      width:min(920px,100%);
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:0 18px 60px rgba(0,0,0,.22);
+      padding:14px;
+      max-height:88vh;
+      overflow:auto;
+    }
+    .modalHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      position:sticky;
+      top:0;
+      background:#fff;
+      padding:6px 0 10px;
+      z-index:1;
+    }
+    .modalHeader h2{
+      margin:0;
+      font-size:16px;
+      font-weight:900;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 860px){ .grid2{ grid-template-columns:1fr; } }
+
+    input, select{
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      font-size:15px;
+      background:#fff;
+      min-width: 220px;
+    }
+    input.full{ width:100%; min-width:0; }
+
+    .callout{
+      background:#f8fafc;
+      border:1px dashed var(--border);
+      border-radius:14px;
+      padding:10px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .btnGroupTight{ display:flex; gap:8px; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>DebateCoach</h1>
+        <div class="muted">Practice a ping-pong debate: record → transcribe → reply → teacher feedback at the end.</div>
+      </div>
+
+      <div class="rightTop">
+        <span class="pill" id="rolesPill">Student: PRO • Computer: CON</span>
+        <button class="btn" id="settingsBtn" type="button">⚙️ Settings</button>
+      </div>
+    </div>
+
+    <div class="topicBar">
+      <div class="topicTitle">DEBATE TOPIC</div>
+      <div class="topicLine" id="topicLine">Make English the language of instruction in Israeli schools</div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Debate -->
+      <div class="card">
+        <div class="row between">
+          <div class="sectionTitle">Debate</div>
+          <div class="row">
+            <span class="pill" id="turnPill">Your turn</span>
+            <span class="pill timerPill" id="timer">05:00</span>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div class="btnGroupTight">
+            <button class="btn primary" id="startSessionBtn" type="button">⏱️ Start session</button>
+            <button class="btn" id="doneBtn" type="button" disabled>✅ I’m done</button>
+          </div>
+
+          <button class="btn danger" id="resetBtn" type="button" disabled>↩️ Reset</button>
+
+          <div style="flex:1"></div>
+
+          <button class="btn" id="stopSpeakBtn" type="button" disabled>⏹ Stop speaking</button>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <hr style="border:none;border-top:1px solid var(--border); margin:12px 0;">
+
+        <div class="row between">
+          <div class="sectionTitle">Your argument</div>
+          <div class="row">
+            <button class="btn" id="recBtn" type="button" disabled>🎙️ Start recording</button>
+            <span class="pill" id="recTime">00:00</span>
+          </div>
+        </div>
+
+        <div class="editorWrap" style="margin-top:10px;">
+          <div class="toolbar">
+            <button class="tool" type="button" data-cmd="bold"><b>B</b></button>
+            <button class="tool" type="button" data-cmd="italic"><i>I</i></button>
+            <button class="tool" type="button" data-cmd="underline"><u>U</u></button>
+            <button class="tool" type="button" id="bulletBtn">• List</button>
+            <button class="tool" type="button" id="clearFormatBtn">Clear</button>
+          </div>
+          <div id="argEditor" class="editor" contenteditable="true" data-placeholder="Type here, or record. Then press: I’m done."></div>
+        </div>
+
+        <div class="row between" style="margin-top:12px;">
+          <div class="small"><b>Transcript</b> (what the mic captured)</div>
+          <button class="btn" id="copyTranscriptBtn" type="button" disabled>➕ Add transcript to editor</button>
+        </div>
+        <textarea class="box" id="transcriptBox" readonly placeholder="After recording, the transcript will appear here..."></textarea>
+
+        <div class="row between" style="margin-top:12px;">
+          <div class="sectionTitle" style="margin:0;">Computer reply</div>
+          <div class="row">
+            <span class="pill" id="autoSpeakPill">Auto-speak: ON</span>
+            <button class="btn" id="toggleSpeakBtn" type="button">🔁 Toggle</button>
+          </div>
+        </div>
+
+        <div class="reply" id="reply">No response yet.</div>
+
+        <div class="row" style="margin-top:10px;">
+          <button class="btn" id="saveReplyBtn" type="button" disabled>➕ Save reply to Notes</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Notes + Feedback -->
+      <div class="card">
+        <div class="row between">
+          <div class="sectionTitle">Notes</div>
+          <div class="row">
+            <button class="btn" id="downloadNotesBtn" type="button">⬇️ Save</button>
+            <button class="btn" id="printNotesBtn" type="button">🖨️ Print</button>
+          </div>
+        </div>
+
+        <textarea id="notes" class="box" style="min-height:240px;" placeholder="Use this as your scratchpad: openings, points, rebuttals, examples..."></textarea>
+
+        <hr style="border:none;border-top:1px solid var(--border); margin:12px 0;">
+
+        <div class="row between">
+          <div class="sectionTitle" style="margin:0;">Teacher feedback (end of debate)</div>
+          <div class="row">
+            <select id="feedbackMode">
+              <option value="short" selected>Short</option>
+              <option value="full">Full</option>
+            </select>
+            <button class="btn primary" id="teacherFeedbackBtn" type="button" disabled>🧑‍🏫 Get feedback</button>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top:10px;">
+          Teacher feedback becomes available after you end/reset the session (or when you want to review the whole debate).
+        </div>
+
+        <div class="reply" id="feedbackBox" style="margin-top:10px;">No feedback yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="overlay" id="settingsOverlay">
+    <div class="modal">
+      <div class="modalHeader">
+        <h2>Settings</h2>
+        <button class="btn" id="closeSettingsBtn" type="button">✕</button>
+      </div>
+
+      <div class="grid2">
+        <div class="card" style="box-shadow:none;">
+          <div class="sectionTitle">Topic & quick tools</div>
+          <input class="full" id="topicInput" value="Make English the language of instruction in Israeli schools" />
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="suggestTopicsBtn" type="button">💡 Suggest topics</button>
+            <select id="topicSelect">
+              <option value="">— Pick a suggested topic —</option>
+            </select>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="randomTopicBtn" type="button">🎲 Random</button>
+            <button class="btn primary" id="applyTopicBtn" type="button">✅ Apply topic</button>
+          </div>
+
+          <div class="callout" style="margin-top:10px;">
+            Topics come from the server: <code>/topics</code>. If you want more variety, click “Suggest topics” again.
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none;">
+          <div class="sectionTitle">Roles & difficulty</div>
+
+          <div class="row">
+            <span class="pill">Student is:</span>
+            <select id="studentSide">
+              <option value="PRO" selected>PRO</option>
+              <option value="CON">CON</option>
+            </select>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <span class="pill">Difficulty:</span>
+            <select id="difficulty">
+              <option value="Easy">Easy</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn primary" id="applyRolesBtn" type="button">✅ Apply roles</button>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border); margin:12px 0;">
+
+          <div class="callout">
+            Student speaks first. The computer automatically argues the opposite side.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINT AREA -->
+  <div id="printArea" style="display:none;"></div>
+
+  <!-- ✅ SCRIPT: one script, at the bottom, after all elements -->
+  <script>
+    console.log("✅ DebateCoach JS loaded");
+
+    // ---------- Elements ----------
+    const rolesPill = document.getElementById("rolesPill");
+
+    const topicLine = document.getElementById("topicLine");
+    const topicInput = document.getElementById("topicInput");
+    const topicSelect = document.getElementById("topicSelect");
+
+    const startSessionBtn = document.getElementById("startSessionBtn");
+    const doneBtn = document.getElementById("doneBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const timerEl = document.getElementById("timer");
+    const turnPill = document.getElementById("turnPill");
+    const statusEl = document.getElementById("status");
+
+    const recBtn = document.getElementById("recBtn");
+    const recTimeEl = document.getElementById("recTime");
+
+    const argEditor = document.getElementById("argEditor");
+    const transcriptBox = document.getElementById("transcriptBox");
+    const copyTranscriptBtn = document.getElementById("copyTranscriptBtn");
+
+    const replyEl = document.getElementById("reply");
+    const saveReplyBtn = document.getElementById("saveReplyBtn");
+
+    const notesEl = document.getElementById("notes");
+    const downloadNotesBtn = document.getElementById("downloadNotesBtn");
+    const printNotesBtn = document.getElementById("printNotesBtn");
+
+    const autoSpeakPill = document.getElementById("autoSpeakPill");
+    const toggleSpeakBtn = document.getElementById("toggleSpeakBtn");
+    const stopSpeakBtn = document.getElementById("stopSpeakBtn");
+
+    const teacherFeedbackBtn = document.getElementById("teacherFeedbackBtn");
+    const feedbackModeEl = document.getElementById("feedbackMode");
+    const feedbackBox = document.getElementById("feedbackBox");
+
+    // Settings modal
+    const settingsOverlay = document.getElementById("settingsOverlay");
+    const settingsBtn = document.getElementById("settingsBtn");
+    const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+
+    const suggestTopicsBtn = document.getElementById("suggestTopicsBtn");
+    const randomTopicBtn = document.getElementById("randomTopicBtn");
+    const applyTopicBtn = document.getElementById("applyTopicBtn");
+
+    const studentSideEl = document.getElementById("studentSide");
+    const difficultyEl = document.getElementById("difficulty");
+    const applyRolesBtn = document.getElementById("applyRolesBtn");
+
+    // Toolbar tools
+    document.querySelectorAll("[data-cmd]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        document.execCommand(btn.dataset.cmd, false, null);
+        argEditor.focus();
+      });
+    });
+    document.getElementById("bulletBtn").addEventListener("click", ()=>{
+      document.execCommand("insertUnorderedList", false, null);
+      argEditor.focus();
+    });
+    document.getElementById("clearFormatBtn").addEventListener("click", ()=>{
+      document.execCommand("removeFormat", false, null);
+      argEditor.focus();
+    });
+
+    // ---------- State ----------
+    let suggestedTopics = [];
+    let sessionActive = false;
+    let sessionSeconds = 300;
+    let sessionInterval = null;
+
+    let autoSpeak = true;
+    let lastReplyText = "";
+    let debateLog = []; // store turns for teacher feedback
+
+    // Recording
+    let isRecording = false;
+    let mediaStream = null;
+    let mediaRecorder = null;
+    let chunks = [];
+    let recStart = 0;
+    let recTick = null;
+    let lastTranscript = "";
+
+    // ---------- Helpers ----------
+    const safe = (s)=> (s ?? "").toString();
+    function setStatus(msg){ statusEl.textContent = msg || ""; }
+
+    function formatTime(sec){
+      const m = Math.floor(sec/60);
+      const s = sec%60;
+      return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    }
+    function formatRec(ms){
+      const sec = Math.max(0, Math.floor(ms/1000));
+      return formatTime(sec);
+    }
+
+    function currentTopic(){
+      const t = safe(topicInput.value).trim();
+      return t || "Debate topic";
+    }
+    function studentStance(){
+      return (studentSideEl.value || "PRO").toUpperCase() === "CON" ? "CON" : "PRO";
+    }
+    function computerStance(){
+      return studentStance() === "PRO" ? "CON" : "PRO";
+    }
+    function difficulty(){
+      return difficultyEl.value || "Medium";
+    }
+
+    function updatePills(){
+      rolesPill.textContent = `Student: ${studentStance()} • Computer: ${computerStance()}`;
+      topicLine.textContent = currentTopic();
+    }
+
+    function stopSpeaking(){
+      speechSynthesis.cancel();
+      stopSpeakBtn.disabled = true;
+    }
+
+    function setAutoSpeakPill(){
+      autoSpeakPill.textContent = `Auto-speak: ${autoSpeak ? "ON" : "OFF"}`;
+    }
+
+    function htmlify(text){
+      // lightweight: turn plain sections into HTML
+      const esc = (s)=> safe(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+      const lines = safe(text).split("\n");
+      let out = "";
+      let inUL = false;
+      const close = ()=>{ if(inUL){ out += "</ul>"; inUL=false; } };
+
+      for(const raw of lines){
+        const line = raw.replace(/\r/g,"");
+        const t = line.trim();
+        if(!t){ close(); continue; }
+
+        const head = t.match(/^([A-Z][A-Z \-]{2,40}):\s*$/);
+        if(head){
+          close();
+          out += `<h3><b>${esc(head[1])}</b></h3>`;
+          continue;
+        }
+        const bullet = t.match(/^[-•]\s+(.+)$/);
+        if(bullet){
+          if(!inUL){ out += "<ul>"; inUL=true; }
+          out += `<li>${esc(bullet[1])}</li>`;
+          continue;
+        }
+        close();
+        out += `<div>${esc(line)}</div>`;
+      }
+      close();
+      return out || "<div>(Empty)</div>";
+    }
+
+    // ---------- Settings modal ----------
+    settingsBtn.addEventListener("click", ()=> settingsOverlay.style.display="flex");
+    closeSettingsBtn.addEventListener("click", ()=> settingsOverlay.style.display="none");
+    settingsOverlay.addEventListener("click", (e)=>{
+      if(e.target === settingsOverlay) settingsOverlay.style.display="none";
+    });
+
+    applyRolesBtn.addEventListener("click", ()=>{
+      updatePills();
+      settingsOverlay.style.display="none";
+    });
+
+    applyTopicBtn.addEventListener("click", ()=>{
+      updatePills();
+      settingsOverlay.style.display="none";
+    });
+
+    topicSelect.addEventListener("change", ()=>{
+      if(topicSelect.value){
+        topicInput.value = topicSelect.value;
+        updatePills();
+      }
+    });
+
+    // ---------- Topics ----------
+    suggestTopicsBtn.addEventListener("click", async ()=>{
+      suggestTopicsBtn.disabled = true;
+      suggestTopicsBtn.textContent = "⏳ Suggesting...";
+      try{
+        const res = await fetch("/topics");
+        const data = await res.json();
+        if(!res.ok) throw new Error((data && (data.error || data.details)) || ("HTTP "+res.status));
+        suggestedTopics = Array.isArray(data.topics) ? data.topics : [];
+
+        topicSelect.innerHTML = `<option value="">— Pick a suggested topic —</option>`;
+        for(const t of suggestedTopics){
+          const opt = document.createElement("option");
+          opt.value = t; opt.textContent = t;
+          topicSelect.appendChild(opt);
+        }
+      }catch(err){
+        alert("Topics error: " + (err?.message || err));
+      }finally{
+        suggestTopicsBtn.disabled = false;
+        suggestTopicsBtn.textContent = "💡 Suggest topics";
+      }
+    });
+
+    randomTopicBtn.addEventListener("click", ()=>{
+      if(!suggestedTopics.length){
+        alert("No suggested topics yet. Click Suggest topics first.");
+        return;
+      }
+      const t = suggestedTopics[Math.floor(Math.random()*suggestedTopics.length)];
+      topicInput.value = t;
+      updatePills();
+    });
+
+    // ---------- Session ----------
+    function setControls(active){
+      sessionActive = active;
+      startSessionBtn.disabled = active;
+      doneBtn.disabled = !active;
+      resetBtn.disabled = !active;
+      recBtn.disabled = !active;
+      teacherFeedbackBtn.disabled = active; // only when session NOT active (end/reset)
+    }
+
+    function startSession(){
+      if(sessionInterval) return;
+
+      debateLog = [];
+      lastReplyText = "";
+      replyEl.innerHTML = "No response yet.";
+      saveReplyBtn.disabled = true;
+      feedbackBox.innerHTML = "No feedback yet.";
+      lastTranscript = "";
+      transcriptBox.value = "";
+      copyTranscriptBtn.disabled = true;
+
+      sessionSeconds = 300;
+      timerEl.textContent = formatTime(sessionSeconds);
+      setControls(true);
+      setStatus("Session started. Your turn.");
+      turnPill.textContent = "Your turn";
+
+      sessionInterval = setInterval(()=>{
+        sessionSeconds--;
+        timerEl.textContent = formatTime(sessionSeconds);
+        if(sessionSeconds <= 0){
+          endSession("Time is up.");
+        }
+      },1000);
+    }
+
+    function endSession(reason){
+      if(sessionInterval){
+        clearInterval(sessionInterval);
+        sessionInterval = null;
+      }
+      if(isRecording) stopRecording();
+
+      setControls(false);
+      setStatus(`Session ended. ${reason || ""}`.trim());
+      turnPill.textContent = "Session ended";
+      stopSpeaking();
+    }
+
+    function resetSession(){
+      endSession("Reset.");
+      // Clear argument + transcript but keep notes
+      argEditor.innerHTML = "";
+      transcriptBox.value = "";
+      lastTranscript = "";
+      copyTranscriptBtn.disabled = true;
+      replyEl.innerHTML = "No response yet.";
+      lastReplyText = "";
+      saveReplyBtn.disabled = true;
+      feedbackBox.innerHTML = "No feedback yet.";
+    }
+
+    startSessionBtn.addEventListener("click", startSession);
+    resetBtn.addEventListener("click", resetSession);
+
+    // ---------- Recording: Start/Stop ----------
+    async function startRecording(){
+      if(isRecording) return;
+      stopSpeaking();
+
+      chunks = [];
+      lastTranscript = "";
+      transcriptBox.value = "";
+      copyTranscriptBtn.disabled = true;
+
+      setStatus("Recording… speak clearly. Press Stop when done.");
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      mediaRecorder = new MediaRecorder(mediaStream);
+      mediaRecorder.ondataavailable = (e)=>{ if(e.data && e.data.size) chunks.push(e.data); };
+
+      mediaRecorder.onstop = async ()=>{
+        try{ mediaStream?.getTracks()?.forEach(t=>t.stop()); }catch{}
+
+        const blob = new Blob(chunks, { type:"audio/webm" });
+        if(blob.size < 2500){
+          setStatus("Dictation failed: audio too small. Speak louder/closer and try again.");
+          return;
+        }
+
+        setStatus("Transcribing…");
+        const fd = new FormData();
+        fd.append("audio", blob, "speech.webm");
+
+        try{
+          const res = await fetch("/stt", { method:"POST", body:fd });
+          const data = await res.json();
+          if(!res.ok){
+            throw new Error((data && (data.error || data.details)) || ("STT HTTP " + res.status));
+          }
+          const text = safe(data.text).trim();
+          lastTranscript = text;
+          transcriptBox.value = text || "";
+          copyTranscriptBtn.disabled = !text;
+          setStatus(text ? "Transcript ready. You can add it to the editor." : "No transcript returned.");
+        }catch(err){
+          setStatus("STT error: " + (err?.message || err));
+        }
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      recBtn.textContent = "⏹ Stop recording";
+      recStart = Date.now();
+      recTick = setInterval(()=>{ recTimeEl.textContent = formatRec(Date.now()-recStart); }, 250);
+    }
+
+    function stopRecording(){
+      if(!isRecording) return;
+      try{ mediaRecorder.stop(); }catch{}
+      isRecording = false;
+      recBtn.textContent = "🎙️ Start recording";
+      clearInterval(recTick); recTick = null;
+      recTimeEl.textContent = "00:00";
+    }
+
+    recBtn.addEventListener("click", async ()=>{
+      if(!sessionActive) return;
+      try{
+        if(!isRecording) await startRecording();
+        else stopRecording();
+      }catch{
+        setStatus("Microphone error. Check Chrome permissions and selected device.");
+        stopRecording();
+      }
+    });
+
+    copyTranscriptBtn.addEventListener("click", ()=>{
+      if(!lastTranscript) return;
+      // append to editor preserving formatting
+      const p = document.createElement("div");
+      p.textContent = lastTranscript;
+      argEditor.appendChild(p);
+      argEditor.focus();
+      setStatus("Transcript added to editor.");
+    });
+
+    // ---------- Debate: I'm done -> computer replies ----------
+    doneBtn.addEventListener("click", async ()=>{
+      if(!sessionActive){
+        setStatus("Start a session first.");
+        return;
+      }
+      if(isRecording){
+        stopRecording();
+        setStatus("Stopped recording. Press I’m done again.");
+        return;
+      }
+
+      const userText = argEditor.innerText.trim();
+      if(!userText){
+        setStatus("Write or record an argument first.");
+        return;
+      }
+
+      stopSpeaking();
+      turnPill.textContent = "Computer is replying…";
+      setStatus("Sending your argument…");
+      replyEl.innerHTML = "Thinking…";
+
+      try{
+        const res = await fetch("/ask",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({
+            topic: currentTopic(),
+            stance: studentStance(),
+            difficulty: difficulty(),
+            userText
+          })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error((data && (data.error || data.details)) || ("HTTP "+res.status));
+
+        lastReplyText = safe(data.reply).trim();
+        replyEl.innerHTML = htmlify(lastReplyText || "(No reply)");
+        saveReplyBtn.disabled = !lastReplyText;
+
+        // log turn for feedback later
+        debateLog.push({ who:"student", text:userText });
+        debateLog.push({ who:"computer", text:lastReplyText });
+
+        setStatus("Computer replied. Your turn.");
+        turnPill.textContent = "Your turn";
+
+        if(autoSpeak && lastReplyText){
+          const u = new SpeechSynthesisUtterance(lastReplyText);
+          u.lang = "en-US";
+          u.onend = ()=> stopSpeakBtn.disabled = true;
+          speechSynthesis.speak(u);
+          stopSpeakBtn.disabled = false;
+        }
+      }catch(err){
+        replyEl.innerHTML = htmlify("Error: " + (err?.message || err));
+        setStatus("Failed to reach server.");
+        turnPill.textContent = "Your turn";
+      }
+    });
+
+    // ---------- Save reply to notes ----------
+    saveReplyBtn.addEventListener("click", ()=>{
+      if(!lastReplyText) return;
+      const cur = notesEl.value || "";
+      notesEl.value = (cur ? cur.trimEnd() + "\n\n" : "") + "COMPUTER REPLY:\n" + lastReplyText;
+      setStatus("Reply saved to Notes.");
+    });
+
+    // ---------- Speak controls ----------
+    setAutoSpeakPill();
+    toggleSpeakBtn.addEventListener("click", ()=>{
+      autoSpeak = !autoSpeak;
+      setAutoSpeakPill();
+      if(!autoSpeak) stopSpeaking();
+    });
+    stopSpeakBtn.addEventListener("click", stopSpeaking);
+
+    // ---------- Teacher feedback (whole debate) ----------
+    teacherFeedbackBtn.addEventListener("click", async ()=>{
+      if(sessionActive){
+        setStatus("End or reset the session first to get full feedback.");
+        return;
+      }
+      if(!debateLog.length){
+        feedbackBox.innerHTML = htmlify("No debate log yet. Run a session first.");
+        return;
+      }
+
+      const mode = feedbackModeEl.value || "short";
+      const prompt =
+`You are an English debate teacher.
+Give feedback on the ENTIRE debate transcript below.
+
+Requirements:
+- Focus on language corrections + clarity + structure + argument strength.
+- Include examples of improved sentences.
+- If you suspect misheard words from STT, mention them.
+- Also comment briefly on speaking pace/fluency (general guidance, not numbers).
+
+Output format (NO markdown, NO asterisks):
+SUMMARY:
+LANGUAGE FIXES (Original → Better):
+CONTENT & ARGUMENTS:
+SPEAKING / DELIVERY TIPS:
+NEXT STEPS:
+
+Depth: ${mode === "full" ? "detailed" : "short"}.
+
+DEBATE LOG:
+${debateLog.map(t => `${t.who.toUpperCase()}: ${t.text}`).join("\n\n")}
+`;
+
+      feedbackBox.innerHTML = "Teacher is thinking…";
+      try{
+        const res = await fetch("/prep",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({
+            topic: currentTopic(),
+            stance: studentStance(),
+            difficulty: difficulty(),
+            userText: prompt
+          })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error((data && (data.error || data.details)) || ("HTTP " + res.status));
+        const out = safe(data.reply).trim();
+        feedbackBox.innerHTML = htmlify(out || "(No feedback)");
+      }catch(err){
+        feedbackBox.innerHTML = htmlify("Feedback error: " + (err?.message || err));
+      }
+    });
+
+    // ---------- Notes save/print ----------
+    downloadNotesBtn.addEventListener("click", ()=>{
+      const blob = new Blob([notesEl.value || ""], { type:"text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "debatecoach-notes.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    printNotesBtn.addEventListener("click", ()=>{
+      const txt = notesEl.value || "";
+      const win = window.open("", "_blank");
+      win.document.write(`<pre style="font-family:system-ui; white-space:pre-wrap; font-size:16px; line-height:1.5;">${txt.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}</pre>`);
+      win.document.close();
+      win.focus();
+      win.print();
+    });
+
+    // ---------- Init ----------
+    timerEl.textContent = formatTime(sessionSeconds);
+    setControls(false);
+    updatePills();
+  </script>
 </body>
 </html>

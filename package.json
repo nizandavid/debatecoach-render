@@ -1,20 +1,33 @@
 {
   "name": "debatecoach-render",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "DebateCoach – practice spoken debate with AI opponent",
+  "main": "server.js",
   "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "debate",
+    "education",
+    "english",
+    "ai",
+    "speech-to-text"
+  ],
+  "author": "David Nizan",
+  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "multer": "^2.0.2",
     "openai": "^6.15.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

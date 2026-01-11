@@ -12,7 +12,13 @@ const multer = require("multer");
 require("dotenv").config();
 
 const OpenAI = require("openai");
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const apiKey = process.env.OPENAI_API_KEY;
+
+if (!apiKey) {
+  console.error("❌ Missing OPENAI_API_KEY in .env");
+}
+
+const client = new OpenAI({ apiKey });
 
 const app = express();
 app.use(cors());
@@ -39,6 +45,32 @@ function sanitizeStance(s) {
   return v === "CON" ? "CON" : "PRO";
 }
 
+function clampTurns(turns) {
+  if (!Array.isArray(turns)) return [];
+  return turns
+    .filter((t) => t && typeof t === "object")
+    .map((t) => ({
+      studentText: safeStr(t.studentText, "").slice(0, 6000),
+      studentTranscript: safeStr(t.studentTranscript, "").slice(0, 6000),
+      recordingMs: Number.isFinite(t.recordingMs) ? Math.max(0, Math.floor(t.recordingMs)) : 0,
+      aiReply: safeStr(t.aiReply, "").slice(0, 6000),
+    }))
+    .slice(0, 12);
+}
+
+function wordsCount(text) {
+  const s = safeStr(text, "").trim();
+  if (!s) return 0;
+  return s.split(/\s+/).filter(Boolean).length;
+}
+
+function wpm(words, ms) {
+  if (!ms || ms <= 0) return null;
+  const minutes = ms / 60000;
+  if (minutes <= 0) return null;
+  return Math.round(words / minutes);
+}
+
 async function chat({ system, messages, temperature = 0.7 }) {
   const resp = await client.chat.completions.create({
     model: "gpt-4o-mini",
@@ -50,7 +82,7 @@ async function chat({ system, messages, temperature = 0.7 }) {
 
 // -------------------- prompts --------------------
 function topicsSystemPrompt() {
-  // ✅ זה ה-PROMPT הסופי שבחרת
+  // ✅ ה-PROMPT הסופי שלך
   return `You are a debate coach for Israeli high-school students (ages 14–18).
 Generate EXACTLY 10 debate motions (one sentence each) that are engaging and relevant to teens.
 
@@ -94,6 +126,11 @@ function prepSystemPrompt({ topic, stance, difficulty }) {
     level,
     `Topic: "${topic}"`,
     `Student stance: ${stance}`,
+    "",
+    "Formatting rules:",
+    "- No markdown, no asterisks.",
+    "- Use clear headings like: OPENING:, PRO POINTS:, CON POINTS:, REBUTTALS: etc.",
+    "- Use hyphen bullets.",
   ].join("\n");
 }
 
@@ -113,6 +150,54 @@ function askSystemPrompt({ topic, stance, difficulty }) {
     level,
     `Motion: "${topic}"`,
     `Student stance: ${stance} (so you argue the opposite).`,
+    "",
+    "Formatting rules:",
+    "- No markdown, no asterisks.",
+    "- Prefer short paragraphs.",
+  ].join("\n");
+}
+
+function feedbackSystemPrompt({ topic, studentSide, difficulty, mode }) {
+  const level =
+    difficulty === "Easy"
+      ? "Use simple English explanations."
+      : difficulty === "Hard"
+        ? "Use more advanced English but keep it teacher-friendly."
+        : "Use clear English, teacher-friendly.";
+
+  const depth =
+    mode === "detailed"
+      ? "Give a detailed teacher-style feedback with examples."
+      : "Give short, high-impact feedback (quick to read).";
+
+  return [
+    "You are an English teacher + debate coach.",
+    "You are reviewing a FULL practice debate session (multiple turns).",
+    "Your feedback must help the student improve quickly.",
+    level,
+    depth,
+    "",
+    `Topic: "${topic}"`,
+    `Student side: ${studentSide}.`,
+    "",
+    "Hard rules:",
+    "- Do NOT mention policy or safety.",
+    "- Do NOT give technical audio diagnostics.",
+    "- Use the provided transcript and WPM as a rough fluency indicator, but keep it educational.",
+    "",
+    "Output format rules (IMPORTANT):",
+    "- No markdown, no asterisks, no numbering like 1) unless requested below.",
+    "- Use these exact headings:",
+    "SUMMARY:",
+    "ENGLISH FIXES (Top 5):",
+    "MISHEARD / UNCLEAR WORDS:",
+    "DEBATE COACHING:",
+    "FLUENCY & PACE:",
+    "NEXT PRACTICE TASK:",
+    "",
+    "Under each heading use hyphen bullets.",
+    "For ENGLISH FIXES: write Original → Better (short).",
+    "For MISHEARD / UNCLEAR WORDS: only include if you strongly suspect mishearing; otherwise write: - None",
   ].join("\n");
 }
 
@@ -136,7 +221,6 @@ app.get("/topics", async (_req, res) => {
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) topics = parsed.map((t) => String(t)).filter(Boolean);
     } catch {
-      // fallback if model returns lines
       topics = text
         .split("\n")
         .map((s) => s.replace(/^[-*\d.\s]+/, "").trim())
@@ -157,7 +241,7 @@ app.get("/topics", async (_req, res) => {
   }
 });
 
-// 🔹 Prep (supports either messages[] OR userText one-shot)
+// 🔹 Prep (optional; one-shot or messages[])
 app.post("/prep", async (req, res) => {
   try {
     const topic = safeStr(req.body?.topic, "Debate topic");
@@ -200,7 +284,7 @@ app.post("/prep", async (req, res) => {
 app.post("/ask", async (req, res) => {
   try {
     const topic = safeStr(req.body?.topic, "Debate topic");
-    const stance = sanitizeStance(req.body?.stance);
+    const stance = sanitizeStance(req.body?.stance); // student stance
     const difficulty = sanitizeDifficulty(req.body?.difficulty);
     const userText = safeStr(req.body?.userText, "").trim();
 
@@ -216,6 +300,69 @@ app.post("/ask", async (req, res) => {
     console.error("❌ /ask:", err);
     res.status(500).json({
       error: "Ask failed",
+      details: err?.message || String(err),
+    });
+  }
+});
+
+// 🔹 Feedback on FULL debate
+app.post("/feedback", async (req, res) => {
+  try {
+    const topic = safeStr(req.body?.topic, "Debate topic");
+    const studentSide = sanitizeStance(req.body?.studentSide || req.body?.stance);
+    const difficulty = sanitizeDifficulty(req.body?.difficulty);
+    const mode = (safeStr(req.body?.mode, "short").toLowerCase() === "detailed") ? "detailed" : "short";
+
+    const turns = clampTurns(req.body?.turns);
+
+    if (!turns.length) {
+      return res.status(400).json({ error: "No turns provided" });
+    }
+
+    // Aggregate WPM (rough)
+    const totalMs = turns.reduce((a, t) => a + (t.recordingMs || 0), 0);
+    const totalTranscript = turns.map(t => t.studentTranscript || "").join(" ").trim();
+    const totalWords = wordsCount(totalTranscript);
+    const totalWpm = wpm(totalWords, totalMs);
+
+    const compactTurns = turns.map((t, idx) => {
+      const tr = (t.studentTranscript || "").trim();
+      const txt = (t.studentText || "").trim();
+      const words = wordsCount(tr);
+      const w = wpm(words, t.recordingMs);
+      return [
+        `TURN ${idx + 1}:`,
+        `Student transcript: ${tr || "(empty)"}`,
+        `Student final text (after edits): ${txt || "(empty)"}`,
+        `Recording time ms: ${t.recordingMs || 0}`,
+        `Estimated WPM: ${w ?? "unknown"}`,
+        `Computer reply: ${t.aiReply || "(empty)"}`,
+      ].join("\n");
+    }).join("\n\n");
+
+    const system = feedbackSystemPrompt({ topic, studentSide, difficulty, mode });
+
+    const userMsg = [
+      "Here is the full session data.",
+      `Overall estimated WPM: ${totalWpm ?? "unknown"} (based on transcript words / recording time)`,
+      "",
+      compactTurns,
+    ].join("\n");
+
+    const reply = await chat({
+      system,
+      messages: [{ role: "user", content: userMsg.slice(0, 24000) }],
+      temperature: 0.4,
+    });
+
+    res.json({
+      reply: reply || "",
+      meta: { totalWpm: totalWpm ?? null, totalWords, totalMs, turns: turns.length, mode },
+    });
+  } catch (err) {
+    console.error("❌ /feedback:", err);
+    res.status(500).json({
+      error: "Feedback failed",
       details: err?.message || String(err),
     });
   }
@@ -278,10 +425,8 @@ app.post("/stt", upload.single("audio"), async (req, res) => {
   }
 });
 
-// -------------------- SPA fallback (no "*" bug) --------------------
-// IMPORTANT: Express 5 can throw on app.get("*"). Use regex instead.
+// -------------------- SPA fallback (Express 5 safe) --------------------
 app.get(/.*/, (req, res, next) => {
-  // if route not handled and file not found, serve index.html
   if (req.method !== "GET") return next();
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
