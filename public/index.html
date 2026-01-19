@@ -1,156 +1,1712 @@
 <!doctype html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DebateCoach</title>
+  <title>DebateCoach - Practice Debate with AI</title>
+  <style>
+    /* ==================== VARIABLES ==================== */
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #ffffff;
+      
+      --gradient-main: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-success: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+      --gradient-danger: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      --gradient-recording: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-light: #94a3b8;
+      --text-white: #ffffff;
+      
+      --border: #e2e8f0;
+      --border-light: #f1f5f9;
+      
+      --primary: #667eea;
+      --primary-dark: #5a67d8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 9999px;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
+      
+      --transition: all 0.2s ease;
+    }
 
-  <link rel="stylesheet" href="/app.css?v=2" />
-  <script src="/app.js?v=2" defer></script>
+    /* ==================== RESET & BASE ==================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ==================== CONTAINER ==================== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ==================== HEADER ==================== */
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius-xl);
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      background: var(--gradient-main);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .brand h1 {
+      font-size: 28px;
+      font-weight: 800;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+
+    .brand .tagline {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* ==================== STATE BADGE ==================== */
+    .state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: var(--shadow-md);
+      transition: var(--transition);
+    }
+
+    .state-badge.idle {
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+      color: var(--text-secondary);
+    }
+
+    .state-badge.recording {
+      background: var(--gradient-recording);
+      color: white;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .state-badge.thinking {
+      background: var(--gradient-main);
+      color: white;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .state-badge.your-turn {
+      background: var(--gradient-success);
+      color: var(--text-primary);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.05); }
+    }
+
+    /* ==================== MAIN GRID ==================== */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1200px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ==================== CARDS ==================== */
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-xl);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border-light);
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .icon {
+      font-size: 24px;
+    }
+
+    /* ==================== TOPIC SECTION ==================== */
+    .topic-display {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+      border: 2px solid var(--border);
+      transition: var(--transition);
+    }
+
+    .topic-display:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .topic-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .topic-text {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.3;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .topic-empty {
+      color: var(--text-light);
+      font-weight: 400;
+      font-size: 18px;
+    }
+
+    /* ==================== SETTINGS INLINE ==================== */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .setting-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper::after {
+      content: "▼";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    select {
+      width: 100%;
+      padding: 12px 36px 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      background: white;
+      font-size: 15px;
+      color: var(--text-primary);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      appearance: none;
+    }
+
+    select:hover {
+      border-color: var(--primary);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      transition: var(--transition);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* ==================== BUTTONS ==================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-primary {
+      background: var(--gradient-main);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--gradient-success);
+      color: var(--text-primary);
+    }
+
+    .btn-danger {
+      background: var(--gradient-danger);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--text-primary);
+      border: 2px solid var(--border);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      box-shadow: none;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--gradient-main);
+      color: white;
+      border: none;
+      font-size: 32px;
+      cursor: pointer;
+      box-shadow: var(--shadow-xl), var(--shadow-glow);
+      transition: var(--transition);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fab:hover {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .fab:active {
+      transform: scale(0.95);
+    }
+
+    .fab.recording {
+      background: var(--gradient-recording);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ==================== EDITOR ==================== */
+    .editor-container {
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 20px;
+      transition: var(--transition);
+    }
+
+    .editor-container:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .editor-toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-bottom: 2px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .toolbar-btn {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 14px;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .toolbar-btn:hover {
+      background: var(--border-light);
+      border-color: var(--primary);
+    }
+
+    .editor {
+      padding: 20px;
+      min-height: 180px;
+      font-size: 17px;
+      line-height: 1.6;
+      outline: none;
+      background: white;
+    }
+
+    .editor:empty:before {
+      content: attr(data-placeholder);
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* ==================== RECORDING SECTION ==================== */
+    .recording-section {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .recording-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .recording-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recording-time {
+      font-size: 20px;
+      font-weight: 800;
+      font-family: 'Courier New', monospace;
+      color: var(--danger);
+    }
+
+    .waveform {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 40px;
+      margin-bottom: 16px;
+    }
+
+    .wave-bar {
+      width: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+      animation: wave 1s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) { height: 10px; animation-delay: 0s; }
+    .wave-bar:nth-child(2) { height: 20px; animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { height: 30px; animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { height: 25px; animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { height: 35px; animation-delay: 0.4s; }
+    .wave-bar:nth-child(6) { height: 20px; animation-delay: 0.5s; }
+    .wave-bar:nth-child(7) { height: 30px; animation-delay: 0.6s; }
+    .wave-bar:nth-child(8) { height: 15px; animation-delay: 0.7s; }
+
+    @keyframes wave {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(1.5); }
+    }
+
+    .transcript-box {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      border-radius: var(--radius-md);
+      background: white;
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 80px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    /* ==================== COMPUTER REPLY ==================== */
+    .reply-section {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .reply-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .reply-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .reply-content {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 120px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .reply-empty {
+      color: var(--text-light);
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* ==================== SIDEBAR ==================== */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Timer Card */
+    .timer-card {
+      text-align: center;
+    }
+
+    .timer-display {
+      font-size: 56px;
+      font-weight: 800;
+      font-family: 'Courier New', monospace;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 16px 0;
+    }
+
+    .timer-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    /* Notes Card */
+    .notes-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      line-height: 1.6;
+      resize: vertical;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .notes-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Actions */
+    .action-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ==================== FEEDBACK SECTION ==================== */
+    .feedback-section {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 2px solid var(--border);
+    }
+
+    .feedback-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .tab:hover {
+      border-color: var(--primary);
+    }
+
+    .tab.active {
+      background: var(--gradient-main);
+      color: white;
+      border-color: transparent;
+    }
+
+    .feedback-content {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      min-height: 200px;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .feedback-empty {
+      text-align: center;
+      color: var(--text-light);
+      padding: 60px 20px;
+      font-style: italic;
+    }
+
+    /* ==================== STATUS BAR ==================== */
+    .status-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-xl);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 90;
+      max-width: 80%;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .status-bar.show {
+      opacity: 1;
+    }
+
+    /* ==================== TOAST ==================== */
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      background: white;
+      padding: 16px 24px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+      max-width: 400px;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.info { border-left: 4px solid var(--info); }
+
+    .toast-icon {
+      font-size: 24px;
+    }
+
+    .toast-message {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* ==================== TOPIC SUGGESTIONS ==================== */
+    .topic-suggestions {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .topic-suggestion {
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      background: white;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: left;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .topic-suggestion:hover {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      transform: translateX(4px);
+    }
+
+    /* ==================== LOADING ==================== */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 768px) {
+      .header {
+        padding: 20px;
+      }
+
+      .brand h1 {
+        font-size: 22px;
+      }
+
+      .topic-text {
+        font-size: 20px;
+      }
+
+      .timer-display {
+        font-size: 48px;
+      }
+
+      .fab {
+        width: 60px;
+        height: 60px;
+        font-size: 28px;
+        bottom: 24px;
+        right: 24px;
+      }
+
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ==================== UTILITY CLASSES ==================== */
+    .hidden {
+      display: none !important;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 16px; }
+    .mb-4 { margin-bottom: 24px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 16px; }
+    .mt-4 { margin-top: 24px; }
+  </style>
 </head>
-
 <body>
-
-  <header class="top">
-    <div class="brand">
-      <div class="logo">DebateCoach</div>
-      <div class="tagline">Start → speak/type → “I’m done” → opponent replies → end → teacher feedback.</div>
-    </div>
-
-    <div class="topRight">
-      <div class="pill" id="whoPill">Student: PRO • Computer: CON</div>
-      <button class="btn" id="settingsBtn" type="button">⚙️ Settings</button>
-    </div>
-  </header>
-
-  <section class="topicBar" id="topicBar">
-    <div class="topicText" id="topicText">Make English the language of instruction in Israeli schools</div>
-    <div class="topicMeta" id="topicMeta">Difficulty: Medium • Student side: PRO</div>
-  </section>
-
-  <main class="grid">
-    <!-- LEFT: practice -->
-    <section class="panel">
-      <div class="panelTitle">Debate practice</div>
-
-      <div class="row rowBetween">
-        <div class="row">
-          <button class="btn primary" id="startSessionBtn" type="button">⏱️ Start session</button>
-          <button class="btn" id="resetBtn" type="button">↩︎ Reset</button>
-          <button class="btn" id="endSessionBtn" type="button" disabled>🏁 End</button>
-        </div>
-
-        <div class="row">
-          <div class="pill" id="turnPill">Not started</div>
-          <div class="pill mono" id="timer">05:00</div>
+  <!-- Header -->
+  <div class="container">
+    <header class="header">
+      <div class="logo-section">
+        <div class="logo">🎯</div>
+        <div class="brand">
+          <h1>DebateCoach</h1>
+          <div class="tagline">Practice debate with AI • Improve your English</div>
         </div>
       </div>
-
-      <div class="status muted" id="status">Ready. Open Settings to pick topic + sides.</div>
-
-      <div class="subTitle">Your argument</div>
-      <textarea id="userText" class="focusBox" placeholder="Type here, or record below. Then press: I’m done."></textarea>
-
-      <div class="row">
-        <button class="btn primary" id="recBtn" type="button">🎙️ Start recording</button>
-        <div class="pill mono" id="recTime">00:00</div>
-        <button class="btn done" id="doneBtn" type="button" disabled>✅ I’m done</button>
-      </div>
-
-      <div class="subTitle rowBetween">
-        <span>Transcript (what the mic captured)</span>
-        <span class="muted tiny">Use this to spot misheard words.</span>
-      </div>
-      <textarea id="transcriptBox" class="focusBox light" readonly placeholder="After recording, transcript will appear here..."></textarea>
-
-      <div class="subTitle">Computer reply</div>
-      <div class="row rowBetween">
-        <div class="row">
-          <div class="pill" id="autoSpeakPill">Auto-speak: ON</div>
-          <button class="btn" id="toggleSpeakBtn" type="button">🔁 Toggle</button>
-          <button class="btn danger" id="stopSpeakBtn" type="button" disabled>⏹ Stop speaking</button>
+      <div class="header-actions">
+        <div class="state-badge idle" id="stateBadge">
+          <span id="stateIcon">⏸️</span>
+          <span id="stateText">Ready to Start</span>
         </div>
       </div>
+    </header>
 
-      <div class="replyBox" id="reply">No reply yet.</div>
-    </section>
+    <!-- Main Content -->
+    <div class="main-grid">
+      <!-- Left Column -->
+      <div>
+        <!-- Topic Display -->
+        <div class="topic-display">
+          <div class="topic-label">📌 Debate Motion</div>
+          <div class="topic-text" id="topicDisplay">
+            <span class="topic-empty">Choose or generate a topic to begin</span>
+          </div>
+        </div>
 
-    <!-- RIGHT: teacher feedback -->
-    <section class="panel">
-      <div class="panelTitle">Teacher feedback (end of session)</div>
-      <div class="muted">Short or detailed feedback on the whole debate.</div>
-
-      <div class="row" style="margin-top:12px;">
-        <button class="btn" id="shortFbBtn" type="button" disabled>🧑‍🏫 Short feedback</button>
-        <button class="btn" id="detailedFbBtn" type="button" disabled>📘 Detailed feedback</button>
-      </div>
-
-      <div class="feedbackBox" id="feedbackBox">End a session to enable feedback.</div>
-      <div class="tiny muted" style="margin-top:10px;">
-        Feedback uses: your transcript + your edited text + opponent replies.
-      </div>
-    </section>
-  </main>
-
-  <!-- SETTINGS MODAL -->
-  <div id="settingsOverlay" class="modalOverlay" aria-hidden="true">
-    <div class="modal">
-      <div class="modalHeader">
-        <div class="modalTitle">Settings</div>
-        <button class="btn" id="closeSettingsBtn" type="button">✕</button>
-      </div>
-
-      <div class="modalGrid">
+        <!-- Settings -->
         <div class="card">
-          <div class="cardTitle">Topic</div>
-
-          <div class="row">
-            <button class="btn" id="suggestBtn" type="button">💡 Suggest topics</button>
-            <select id="topicSelect">
-              <option value="">— pick —</option>
-            </select>
-            <button class="btn" id="randomTopicBtn" type="button">🎲 Random</button>
+          <div class="card-header">
+            <div class="card-title">
+              <span class="icon">⚙️</span>
+              Setup
+            </div>
           </div>
 
-          <input id="topicInput" class="input" placeholder="Or type your own topic..." />
+          <div class="settings-grid">
+            <div class="setting-group">
+              <label class="setting-label">Your Side</label>
+              <div class="select-wrapper">
+                <select id="stanceSelect">
+                  <option value="PRO">PRO (For)</option>
+                  <option value="CON">CON (Against)</option>
+                </select>
+              </div>
+            </div>
 
-          <div class="row" style="margin-top:10px;">
-            <button class="btn primary" id="applyTopicBtn" type="button">✅ Apply topic</button>
+            <div class="setting-group">
+              <label class="setting-label">Difficulty</label>
+              <div class="select-wrapper">
+                <select id="difficultySelect">
+                  <option value="Easy">Easy</option>
+                  <option value="Medium" selected>Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Session Length</label>
+              <div class="select-wrapper">
+                <select id="durationSelect">
+                  <option value="3">3 minutes</option>
+                  <option value="5" selected>5 minutes</option>
+                  <option value="8">8 minutes</option>
+                  <option value="10">10 minutes</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-group mt-3">
+            <label class="setting-label">Custom Topic</label>
+            <input type="text" id="customTopic" placeholder="Or enter your own debate topic...">
+          </div>
+
+          <div class="action-group mt-3">
+            <button class="btn btn-secondary" id="suggestBtn">
+              <span>🎲</span>
+              Suggest Topics
+            </button>
+            <button class="btn btn-primary" id="startBtn">
+              <span>▶️</span>
+              Start Session
+            </button>
+            <button class="btn btn-danger hidden" id="resetBtn">
+              <span>🔄</span>
+              Reset
+            </button>
+          </div>
+
+          <!-- Topic Suggestions -->
+          <div class="topic-suggestions hidden" id="topicSuggestions"></div>
+        </div>
+
+        <!-- Editor Section -->
+        <div class="card mt-4 hidden" id="editorCard">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="icon">✍️</span>
+              Your Argument
+            </div>
+          </div>
+
+          <div class="editor-container">
+            <div class="editor-toolbar">
+              <button class="toolbar-btn" data-cmd="bold">
+                <strong>B</strong>
+              </button>
+              <button class="toolbar-btn" data-cmd="italic">
+                <em>I</em>
+              </button>
+              <button class="toolbar-btn" data-cmd="insertUnorderedList">
+                • List
+              </button>
+            </div>
+            <div 
+              class="editor" 
+              id="editor" 
+              contenteditable="true" 
+              data-placeholder="Type your argument here, or record below..."
+            ></div>
+          </div>
+
+          <!-- Recording Section -->
+          <div class="recording-section mt-3 hidden" id="recordingSection">
+            <div class="recording-header">
+              <div class="recording-title">
+                <span>🎙️</span>
+                Recording
+              </div>
+              <div class="recording-time" id="recordingTime">00:00</div>
+            </div>
+            <div class="waveform hidden" id="waveform">
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+            <textarea 
+              class="transcript-box" 
+              id="transcriptBox" 
+              readonly 
+              placeholder="Your transcription will appear here..."
+            ></textarea>
+            <div class="action-group mt-3">
+              <button class="btn btn-secondary" id="recordBtn">
+                <span>🎙️</span>
+                Start Recording
+              </button>
+              <button class="btn btn-secondary" id="addTranscriptBtn" disabled>
+                <span>➕</span>
+                Add to Editor
+              </button>
+            </div>
+          </div>
+
+          <div class="action-group mt-3">
+            <button class="btn btn-success" id="doneBtn">
+              <span>✅</span>
+              I'm Done - Computer's Turn
+            </button>
           </div>
         </div>
 
+        <!-- Computer Reply -->
+        <div class="reply-section hidden" id="replySection">
+          <div class="reply-header">
+            <div class="reply-title">
+              <span>🤖</span>
+              Computer's Response
+            </div>
+            <div class="action-group">
+              <button class="btn btn-ghost" id="speakToggle">
+                <span>🔊</span>
+                <span id="speakText">Auto-speak ON</span>
+              </button>
+              <button class="btn btn-ghost" id="stopSpeakBtn" disabled>
+                <span>🔇</span>
+                Stop
+              </button>
+            </div>
+          </div>
+          <div class="reply-content" id="replyContent">
+            <div class="reply-empty">Waiting for your argument...</div>
+          </div>
+          <div class="action-group mt-3">
+            <button class="btn btn-secondary" id="saveReplyBtn" disabled>
+              <span>💾</span>
+              Save to Notes
+            </button>
+          </div>
+        </div>
+
+        <!-- Feedback Section (only shows after session ends) -->
+        <div class="feedback-section hidden" id="feedbackSection">
+          <div class="card-header">
+            <div class="card-title">
+              <span class="icon">👨‍🏫</span>
+              Teacher Feedback
+            </div>
+          </div>
+          <div class="feedback-tabs">
+            <button class="tab active" data-mode="short">Quick Feedback</button>
+            <button class="tab" data-mode="detailed">Detailed Analysis</button>
+          </div>
+          <div class="feedback-content" id="feedbackContent">
+            <div class="feedback-empty">
+              Complete the session to get personalized feedback on your performance!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div class="sidebar">
+        <!-- Timer Card -->
+        <div class="card timer-card">
+          <div class="card-title text-center mb-3">
+            <span class="icon">⏱️</span>
+            Time Remaining
+          </div>
+          <div class="timer-display" id="timerDisplay">5:00</div>
+          <div class="timer-label">Session timer</div>
+        </div>
+
+        <!-- Notes Card -->
         <div class="card">
-          <div class="cardTitle">Roles</div>
-
-          <div class="row">
-            <label class="label">Student side</label>
-            <select id="studentSide">
-              <option value="PRO" selected>PRO</option>
-              <option value="CON">CON</option>
-            </select>
+          <div class="card-header">
+            <div class="card-title">
+              <span class="icon">📝</span>
+              Notes
+            </div>
           </div>
-
-          <div class="row" style="margin-top:10px;">
-            <label class="label">Difficulty</label>
-            <select id="difficulty">
-              <option value="Easy">Easy</option>
-              <option value="Medium" selected>Medium</option>
-              <option value="Hard">Hard</option>
-            </select>
-          </div>
-
-          <div class="row" style="margin-top:12px;">
-            <button class="btn primary" id="applyRolesBtn" type="button">✅ Apply roles</button>
-          </div>
-
-          <div class="tiny muted" style="margin-top:8px;">
-            Computer automatically takes the opposite side.
+          <textarea 
+            class="notes-textarea" 
+            id="notesArea" 
+            placeholder="Take notes during the debate..."
+          ></textarea>
+          <div class="action-group mt-3">
+            <button class="btn btn-secondary" id="downloadNotesBtn">
+              <span>💾</span>
+              Download
+            </button>
+            <button class="btn btn-secondary" id="printNotesBtn">
+              <span>🖨️</span>
+              Print
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- JS external (defer ensures DOM exists) -->
-  <script src="/app.js?v=1" defer></script>
+  <!-- Floating Action Button (context-aware) -->
+  <button class="fab hidden" id="fab" title="Primary action">
+    ▶️
+  </button>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar"></div>
+
+  <!-- JavaScript -->
+  <script>
+    /* ==================== STATE ==================== */
+    let sessionActive = false;
+    let sessionSeconds = 0;
+    let sessionInterval = null;
+    let currentState = 'idle'; // idle, recording, thinking, your-turn
+    let autoSpeak = true;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let mediaStream = null;
+    let chunks = [];
+    let recStart = 0;
+    let recTick = null;
+    let lastTranscript = "";
+    let lastReplyText = "";
+    let debateLog = [];
+
+    /* ==================== ELEMENTS ==================== */
+    const stateBadge = document.getElementById('stateBadge');
+    const stateIcon = document.getElementById('stateIcon');
+    const stateText = document.getElementById('stateText');
+    const topicDisplay = document.getElementById('topicDisplay');
+    const customTopic = document.getElementById('customTopic');
+    const stanceSelect = document.getElementById('stanceSelect');
+    const difficultySelect = document.getElementById('difficultySelect');
+    const durationSelect = document.getElementById('durationSelect');
+    const suggestBtn = document.getElementById('suggestBtn');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const topicSuggestions = document.getElementById('topicSuggestions');
+    const editorCard = document.getElementById('editorCard');
+    const editor = document.getElementById('editor');
+    const recordingSection = document.getElementById('recordingSection');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordingTime = document.getElementById('recordingTime');
+    const waveform = document.getElementById('waveform');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const addTranscriptBtn = document.getElementById('addTranscriptBtn');
+    const doneBtn = document.getElementById('doneBtn');
+    const replySection = document.getElementById('replySection');
+    const replyContent = document.getElementById('replyContent');
+    const speakToggle = document.getElementById('speakToggle');
+    const speakText = document.getElementById('speakText');
+    const stopSpeakBtn = document.getElementById('stopSpeakBtn');
+    const saveReplyBtn = document.getElementById('saveReplyBtn');
+    const feedbackSection = document.getElementById('feedbackSection');
+    const feedbackContent = document.getElementById('feedbackContent');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const notesArea = document.getElementById('notesArea');
+    const downloadNotesBtn = document.getElementById('downloadNotesBtn');
+    const printNotesBtn = document.getElementById('printNotesBtn');
+    const fab = document.getElementById('fab');
+    const statusBar = document.getElementById('statusBar');
+
+    /* ==================== UTILITIES ==================== */
+    function safe(x, fallback = "") {
+      return typeof x === "string" ? x : fallback;
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function formatRecordingTime(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function showStatus(message, duration = 3000) {
+      statusBar.textContent = message;
+      statusBar.classList.add('show');
+      setTimeout(() => {
+        statusBar.classList.remove('show');
+      }, duration);
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const icons = {
+        success: '✅',
+        error: '❌',
+        info: 'ℹ️'
+      };
+      
+      toast.innerHTML = `
+        <div class="toast-icon">${icons[type]}</div>
+        <div class="toast-message">${message}</div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function setState(newState) {
+      currentState = newState;
+      stateBadge.className = `state-badge ${newState}`;
+      
+      const states = {
+        idle: { icon: '⏸️', text: 'Ready to Start' },
+        recording: { icon: '🎙️', text: 'Recording...' },
+        thinking: { icon: '🤖', text: 'Computer Thinking...' },
+        'your-turn': { icon: '✍️', text: 'Your Turn' }
+      };
+      
+      if (states[newState]) {
+        stateIcon.textContent = states[newState].icon;
+        stateText.textContent = states[newState].text;
+      }
+    }
+
+    function htmlify(text) {
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n\n+/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+      return `<p>${escaped}</p>`;
+    }
+
+    function getCurrentTopic() {
+      const custom = customTopic.value.trim();
+      if (custom) return custom;
+      const displayed = topicDisplay.textContent.trim();
+      if (displayed && !displayed.includes('Choose or generate')) return displayed;
+      return "General debate topic";
+    }
+
+    /* ==================== TOOLBAR ==================== */
+    document.querySelectorAll('.toolbar-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const cmd = btn.dataset.cmd;
+        document.execCommand(cmd, false, null);
+        editor.focus();
+      });
+    });
+
+    /* ==================== TOPIC SUGGESTIONS ==================== */
+    suggestBtn.addEventListener('click', async () => {
+      suggestBtn.disabled = true;
+      suggestBtn.innerHTML = '<div class="loading"></div> Loading...';
+      topicSuggestions.classList.remove('hidden');
+      topicSuggestions.innerHTML = '<div style="text-align:center; padding:20px;">Generating topics...</div>';
+
+      try {
+        const res = await fetch('/topics');
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'Failed to get topics');
+        
+        const topics = data.topics || [];
+        
+        if (topics.length === 0) {
+          topicSuggestions.innerHTML = '<div style="text-align:center; padding:20px; color: var(--text-secondary);">No topics available</div>';
+        } else {
+          topicSuggestions.innerHTML = topics.map(topic => 
+            `<div class="topic-suggestion" data-topic="${topic.replace(/"/g, '&quot;')}">${topic}</div>`
+          ).join('');
+          
+          // Add click handlers
+          document.querySelectorAll('.topic-suggestion').forEach(elem => {
+            elem.addEventListener('click', () => {
+              const topic = elem.dataset.topic;
+              topicDisplay.innerHTML = topic;
+              customTopic.value = '';
+              topicSuggestions.classList.add('hidden');
+              showToast('Topic selected!', 'success');
+            });
+          });
+        }
+      } catch (err) {
+        topicSuggestions.innerHTML = `<div style="text-align:center; padding:20px; color: var(--danger);">Error: ${err.message}</div>`;
+      } finally {
+        suggestBtn.disabled = false;
+        suggestBtn.innerHTML = '<span>🎲</span> Suggest Topics';
+      }
+    });
+
+    /* ==================== SESSION CONTROL ==================== */
+    startBtn.addEventListener('click', () => {
+      const topic = getCurrentTopic();
+      if (topic === "General debate topic" || !topic) {
+        showToast('Please select or enter a topic first', 'error');
+        return;
+      }
+
+      // Start session
+      sessionActive = true;
+      const duration = parseInt(durationSelect.value) || 5;
+      sessionSeconds = duration * 60;
+      debateLog = [];
+
+      // Update UI
+      setState('your-turn');
+      topicDisplay.textContent = topic;
+      timerDisplay.textContent = formatTime(sessionSeconds);
+      
+      // Show/hide elements
+      editorCard.classList.remove('hidden');
+      recordingSection.classList.remove('hidden');
+      replySection.classList.remove('hidden');
+      resetBtn.classList.remove('hidden');
+      startBtn.classList.add('hidden');
+      
+      // Start timer
+      sessionInterval = setInterval(() => {
+        sessionSeconds--;
+        timerDisplay.textContent = formatTime(sessionSeconds);
+        
+        if (sessionSeconds <= 0) {
+          endSession('Time is up!');
+        }
+      }, 1000);
+
+      showToast('Session started! Make your argument.', 'success');
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset? All progress will be lost.')) {
+        endSession('Session reset');
+        resetUI();
+      }
+    });
+
+    function endSession(reason) {
+      if (sessionInterval) {
+        clearInterval(sessionInterval);
+        sessionInterval = null;
+      }
+      
+      if (isRecording) stopRecording();
+      stopSpeaking();
+      
+      sessionActive = false;
+      setState('idle');
+      
+      // Show feedback section
+      if (debateLog.length > 0) {
+        feedbackSection.classList.remove('hidden');
+      }
+      
+      showToast(reason, 'info');
+    }
+
+    function resetUI() {
+      editor.innerHTML = '';
+      transcriptBox.value = '';
+      lastTranscript = '';
+      replyContent.innerHTML = '<div class="reply-empty">Waiting for your argument...</div>';
+      lastReplyText = '';
+      feedbackContent.innerHTML = '<div class="feedback-empty">Complete the session to get personalized feedback on your performance!</div>';
+      
+      editorCard.classList.add('hidden');
+      recordingSection.classList.add('hidden');
+      replySection.classList.add('hidden');
+      feedbackSection.classList.add('hidden');
+      resetBtn.classList.add('hidden');
+      startBtn.classList.remove('hidden');
+      
+      const duration = parseInt(durationSelect.value) || 5;
+      timerDisplay.textContent = formatTime(duration * 60);
+    }
+
+    /* ==================== RECORDING ==================== */
+    recordBtn.addEventListener('click', async () => {
+      if (!sessionActive) {
+        showToast('Start a session first', 'error');
+        return;
+      }
+
+      try {
+        if (!isRecording) {
+          await startRecording();
+        } else {
+          stopRecording();
+        }
+      } catch (err) {
+        showToast('Microphone error. Check permissions.', 'error');
+        stopRecording();
+      }
+    });
+
+    async function startRecording() {
+      if (isRecording) return;
+      
+      stopSpeaking();
+      chunks = [];
+      lastTranscript = '';
+      transcriptBox.value = '';
+      addTranscriptBtn.disabled = true;
+
+      setState('recording');
+      waveform.classList.remove('hidden');
+      recordBtn.innerHTML = '<span>⏹</span> Stop Recording';
+      showStatus('Recording... speak clearly');
+
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(mediaStream);
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        try {
+          mediaStream?.getTracks()?.forEach(t => t.stop());
+        } catch {}
+
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        
+        if (blob.size < 2500) {
+          showToast('Audio too small. Speak louder/closer and try again.', 'error');
+          return;
+        }
+
+        showStatus('Transcribing...');
+        
+        const fd = new FormData();
+        fd.append('audio', blob, 'speech.webm');
+
+        try {
+          const res = await fetch('/stt', { method: 'POST', body: fd });
+          const data = await res.json();
+          
+          if (!res.ok) {
+            throw new Error(data.error || data.details || 'STT failed');
+          }
+
+          const text = safe(data.text).trim();
+          lastTranscript = text;
+          transcriptBox.value = text || '';
+          addTranscriptBtn.disabled = !text;
+          
+          if (text) {
+            showToast('Transcription ready!', 'success');
+          } else {
+            showToast('No transcript returned', 'error');
+          }
+        } catch (err) {
+          showToast(`STT error: ${err.message}`, 'error');
+        }
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      recStart = Date.now();
+      
+      recTick = setInterval(() => {
+        recordingTime.textContent = formatRecordingTime(Date.now() - recStart);
+      }, 250);
+    }
+
+    function stopRecording() {
+      if (!isRecording) return;
+      
+      try {
+        mediaRecorder.stop();
+      } catch {}
+      
+      isRecording = false;
+      setState('your-turn');
+      waveform.classList.add('hidden');
+      recordBtn.innerHTML = '<span>🎙️</span> Start Recording';
+      clearInterval(recTick);
+      recTick = null;
+      recordingTime.textContent = '00:00';
+    }
+
+    addTranscriptBtn.addEventListener('click', () => {
+      if (!lastTranscript) return;
+      
+      const p = document.createElement('div');
+      p.textContent = lastTranscript;
+      editor.appendChild(p);
+      editor.focus();
+      
+      showToast('Transcript added to editor', 'success');
+    });
+
+    /* ==================== DEBATE TURN ==================== */
+    doneBtn.addEventListener('click', async () => {
+      if (!sessionActive) {
+        showToast('Start a session first', 'error');
+        return;
+      }
+
+      if (isRecording) {
+        stopRecording();
+        showToast('Recording stopped. Press again to submit.', 'info');
+        return;
+      }
+
+      const userText = editor.innerText.trim();
+      if (!userText) {
+        showToast('Write or record an argument first', 'error');
+        return;
+      }
+
+      stopSpeaking();
+      setState('thinking');
+      replyContent.innerHTML = '<div style="text-align:center; padding:40px;"><div class="loading" style="width:40px; height:40px; border-width:4px;"></div><p style="margin-top:16px; color:var(--text-secondary);">Thinking...</p></div>';
+
+      try {
+        const res = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: getCurrentTopic(),
+            stance: stanceSelect.value,
+            difficulty: difficultySelect.value,
+            userText
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.details || 'Request failed');
+
+        lastReplyText = safe(data.reply).trim();
+        replyContent.innerHTML = htmlify(lastReplyText || '(No reply)');
+        saveReplyBtn.disabled = !lastReplyText;
+
+        // Log turn
+        debateLog.push({ who: 'student', text: userText });
+        debateLog.push({ who: 'computer', text: lastReplyText });
+
+        setState('your-turn');
+        showToast("Computer replied! Your turn.", 'success');
+
+        // Auto-speak
+        if (autoSpeak && lastReplyText) {
+          const utterance = new SpeechSynthesisUtterance(lastReplyText);
+          utterance.lang = 'en-US';
+          utterance.onend = () => {
+            stopSpeakBtn.disabled = true;
+          };
+          speechSynthesis.speak(utterance);
+          stopSpeakBtn.disabled = false;
+        }
+      } catch (err) {
+        replyContent.innerHTML = `<div style="color:var(--danger); text-align:center; padding:40px;">Error: ${err.message}</div>`;
+        setState('your-turn');
+        showToast('Failed to get response', 'error');
+      }
+    });
+
+    /* ==================== SPEAKING ==================== */
+    speakToggle.addEventListener('click', () => {
+      autoSpeak = !autoSpeak;
+      speakText.textContent = autoSpeak ? 'Auto-speak ON' : 'Auto-speak OFF';
+      if (!autoSpeak) stopSpeaking();
+      showToast(`Auto-speak ${autoSpeak ? 'enabled' : 'disabled'}`, 'info');
+    });
+
+    stopSpeakBtn.addEventListener('click', () => {
+      stopSpeaking();
+    });
+
+    function stopSpeaking() {
+      speechSynthesis.cancel();
+      stopSpeakBtn.disabled = true;
+    }
+
+    /* ==================== SAVE REPLY ==================== */
+    saveReplyBtn.addEventListener('click', () => {
+      if (!lastReplyText) return;
+      
+      const current = notesArea.value || '';
+      notesArea.value = (current ? current.trimEnd() + '\n\n' : '') + 
+                        'COMPUTER REPLY:\n' + lastReplyText;
+      
+      showToast('Reply saved to notes', 'success');
+    });
+
+    /* ==================== FEEDBACK ==================== */
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', async () => {
+        // Update active tab
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        const mode = tab.dataset.mode;
+        
+        if (debateLog.length === 0) {
+          feedbackContent.innerHTML = '<div class="feedback-empty">No debate log yet. Complete a session first.</div>';
+          return;
+        }
+
+        feedbackContent.innerHTML = '<div style="text-align:center; padding:40px;"><div class="loading" style="width:40px; height:40px; border-width:4px; border-color:var(--primary); border-top-color:transparent;"></div><p style="margin-top:16px;">Generating feedback...</p></div>';
+
+        const prompt = `You are an English debate teacher.
+Give feedback on the ENTIRE debate transcript below.
+
+Requirements:
+- Focus on language corrections + clarity + structure + argument strength.
+- Include examples of improved sentences.
+- If you suspect misheard words from STT, mention them.
+- Also comment briefly on speaking pace/fluency (general guidance, not numbers).
+
+Output format (NO markdown, NO asterisks):
+SUMMARY:
+LANGUAGE FIXES (Original → Better):
+CONTENT & ARGUMENTS:
+SPEAKING / DELIVERY TIPS:
+NEXT STEPS:
+
+Depth: ${mode === 'detailed' ? 'detailed with examples' : 'short and actionable'}.
+
+DEBATE LOG:
+${debateLog.map(t => `${t.who.toUpperCase()}: ${t.text}`).join('\n\n')}`;
+
+        try {
+          const res = await fetch('/prep', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              topic: getCurrentTopic(),
+              stance: stanceSelect.value,
+              difficulty: difficultySelect.value,
+              userText: prompt
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || data.details || 'Request failed');
+
+          const feedback = safe(data.reply).trim();
+          feedbackContent.innerHTML = htmlify(feedback || '(No feedback)');
+        } catch (err) {
+          feedbackContent.innerHTML = `<div style="color:var(--danger); padding:40px; text-align:center;">Feedback error: ${err.message}</div>`;
+        }
+      });
+    });
+
+    /* ==================== NOTES ==================== */
+    downloadNotesBtn.addEventListener('click', () => {
+      const blob = new Blob([notesArea.value || ''], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'debatecoach-notes.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Notes downloaded', 'success');
+    });
+
+    printNotesBtn.addEventListener('click', () => {
+      const txt = notesArea.value || '';
+      const win = window.open('', '_blank');
+      win.document.write(`<pre style="font-family:system-ui; white-space:pre-wrap; font-size:16px; line-height:1.5;">${txt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`);
+      win.document.close();
+      win.focus();
+      win.print();
+    });
+
+    /* ==================== INIT ==================== */
+    const duration = parseInt(durationSelect.value) || 5;
+    timerDisplay.textContent = formatTime(duration * 60);
+  </script>
 </body>
 </html>
